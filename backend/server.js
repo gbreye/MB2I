@@ -3,11 +3,23 @@ const app = express();
 const PORT = 3000;
 
 app.get('/', (req, res) => {
-    res.send("hello world");
+    res.send("hello planta");
 });
 
-app.get('/neymar', (req, res) => {
-    res.send("hello sigma");
+app.get('/dispositivo', (req, res) => {
+    res.send("hello dispositivo");
+});
+
+app.get('/conta', (req, res) => {
+    res.send("hello user");
+});
+
+app.get('/conta/login', (req, res) => {
+    res.send("hello user");
+});
+
+app.get('/conta/config', (req, res) => {
+    res.send("hello user");
 });
 
 app.listen(PORT, () => {
