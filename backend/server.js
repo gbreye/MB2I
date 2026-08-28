@@ -1,4 +1,5 @@
 import express from 'express';
+import {run} from './config/database.js';
 const app = express();
 const PORT = 3000;
 
@@ -6,21 +7,7 @@ app.get('/', (req, res) => {
     res.send("hello planta");
 });
 
-app.get('/dispositivo', (req, res) => {
-    res.send("hello dispositivo");
-});
-
-app.get('/conta', (req, res) => {
-    res.send("hello user");
-});
-
-app.get('/conta/login', (req, res) => {
-    res.send("hello user");
-});
-
-app.get('/conta/config', (req, res) => {
-    res.send("hello user");
-});
+run();
 
 app.listen(PORT, () => {
     console.log(`servidor rodando na porta${PORT}`);
