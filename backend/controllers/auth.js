@@ -54,7 +54,7 @@ class auth {
   async signup(req, res) {
     try {
       const { username, email, password } = req.body;
-      if (username.length > 50 || username === "")
+      if (username.length > 50 || !username || username.trim() === "")
         return res.status(400).json({ mes: "invalid body" });
       if (/[{}]/.test(email)) {
         return res.status(400).json({ mes: "bad request!" });
@@ -67,7 +67,7 @@ class auth {
         return res.status(400).json({ mes: "bad request!" });
       }
       const cryptPassWd = await bcrypt.hashSync(password, 12);
-      await User.create({ username, email, password: cryptPassWd });
+      await User.create({ username, email, password: cryptPassWd, isEmailVerify: false, plants: ""});
       return res.status(201).json({ mes: "usuario criado com sucesso!" });
     } catch (error) {
       console.log(error);
@@ -87,7 +87,6 @@ class auth {
       if (!decodedToken || !decodedToken.User) {
         return res.status(401).json({ msg: "Invalid Token" });
       }
-
       const user = await User.findById(decodedToken.User);
       if (!user) {
         return res.status(404).json({ msg: "User Not Found!" });
