@@ -1,102 +1,86 @@
 import jsonwebtoken from "jsonwebtoken";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
-import cookieParser from "cookie-parser";
+import User from "../models/User.js"; 
 
 dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET;
 
-class auth {
+const isStr = (v, max = 50) =>
+  typeof v === "string" && v.trim() !== "" && v.length <= max;
+
+class Auth {
   async login(req, res) {
     try {
-      //comentando o código pros betinhas
       const { email, password } = req.body;
-      if (!email || email.length > 50) {
+      if (!isStr(email) || !isStr(password)) {
         return res.status(400).json({ mes: "bad request!" });
       }
-      //é um sistema de auth basico, mas precisa de verificações de segurança tipo se é um query do mongodb
-      //supostamente funciona é pra verificar o input do usuario
-      //ATENÇÃO, ESTAMOS USANDO HTTPONLY, TODA REQUISIÇÃO DEVE VIR COM ID
-      if (/[{}]/.test(email)) {
-        return res.status(400).json({ mes: "bad request!" });
+
+      const user = await User.findOne({ email: email.toLowerCase() });
+      if (!user || !(await bcrypt.compare(password, user.password))) {
+        return res.status(401).json({ mes: "invalid credentials!" });
       }
-      if (!password || password.length > 50) {
-        return res.status(400).json({ mes: "bad request!" });
-      }
-      if (/[{}]/.test(password)) {
-        return res.status(400).json({ mes: "bad request!" });
-      }
-      const user = await User.findOne(email);
-      if (!user) return res.status(401).json({ mes: "unable to find user!" });
-      const userPassword = user.password;
-      const compare = await bcrypt.compare(password, userPassword);
-      if (!compare) {
-        console.log("Auth Failed!");
-        return res.status(401).json({ mes: "unable to find user!" });
-      }
+
       const token = jsonwebtoken.sign(
         { id: user._id, email: user.email },
         JWT_SECRET,
         { expiresIn: "1h" },
       );
-
       res.cookie("token", token, {
+        httpOnly: true,
         sameSite: "strict",
-        httpOnly: "true",
-        maxAge: "3600000",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 3600000,
       });
       return res.status(200).json({ mes: "Login realizado com sucesso!" });
     } catch (error) {
-      console.log(error);
-      return res.status(500).json({ mes: "Internal Server Error", error });
+      console.error(error);
+      return res.status(500).json({ mes: "Internal Server Error" });
     }
   }
+
   async signup(req, res) {
     try {
       const { username, email, password } = req.body;
-      if (username.length > 50 || !username || username.trim() === "")
+      if (!isStr(username) || !isStr(email) || !isStr(password)) {
         return res.status(400).json({ mes: "invalid body" });
-      if (/[{}]/.test(email)) {
-        return res.status(400).json({ mes: "bad request!" });
       }
-      if (email.length > 50 || username === "")
-        return res.status(400).json({ mes: "invalid body" });
-      if (password.length > 50 || username === "")
-        return res.status(400).json({ mes: "invalid body" });
-      if (/[{}]/.test(password)) {
-        return res.status(400).json({ mes: "bad request!" });
-      }
-      const cryptPassWd = await bcrypt.hashSync(password, 12);
-      await User.create({ username, email, password: cryptPassWd, isEmailVerify: false, plants: ""});
+
+      const hash = await bcrypt.hash(password, 12);
+      await User.create({
+        username,
+        email: email.toLowerCase(),
+        password: hash,
+        isEmailVerify: false,
+        plants: "",
+        esp: "",
+      });
       return res.status(201).json({ mes: "usuario criado com sucesso!" });
     } catch (error) {
-      console.log(error);
+      if (error.code === 11000) {
+        return res.status(409).json({ mes: "email already in use" });
+      }
+      console.error(error);
       return res.status(500).json({ mes: "Server Error" });
     }
   }
+
   async findUser(req, res) {
     try {
-      const standardToken = req.cookies.token;
-      if (!standardToken) {
-        return res.status(401).json({ msg: "Not Authorized" });
-      }
-      const decodedToken = jsonwebtoken.verify(
-        standardToken,
-        process.env.JWT_SECRET,
-      );
-      if (!decodedToken || !decodedToken.User) {
-        return res.status(401).json({ msg: "Invalid Token" });
-      }
-      const user = await User.findById(decodedToken.User);
-      if (!user) {
-        return res.status(404).json({ msg: "User Not Found!" });
-      }
+      const token = req.cookies.token;
+      if (!token) return res.status(401).json({ msg: "Not Authorized" });
+
+      const decoded = jsonwebtoken.verify(token, JWT_SECRET);
+      const user = await User.findById(decoded.id);
+      if (!user) return res.status(404).json({ msg: "User Not Found!" });
+
       return res.status(200).json({ msg: "Found!", user: user._id });
     } catch (error) {
-      console.error(error);
-      return res.status(500).json({ msg: "Internal Server Error" });
+      // verify lança erro se o token for inválido/expirado
+      return res.status(401).json({ msg: "Invalid Token" });
     }
   }
 }
 
-export default Auth.new();
+export default new Auth();
