@@ -22,6 +22,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: false,
   },
+  // `esp` guarda o id do dispositivo do usuário.
+  // As leituras desse ESP ficam no model EspData (um documento por espId).
   esp: {
     type: String,
     required:true
