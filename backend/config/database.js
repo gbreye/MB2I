@@ -15,4 +15,9 @@ async function run(res, req) {
     return res.status(500).json({mes: 'Internal server error'});
   }
 }
-export { run };
+
+module.exports = {
+  run,
+  client,
+  db: client.db('seu_nome_de_banco')
+};
