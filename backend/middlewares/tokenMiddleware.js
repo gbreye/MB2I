@@ -1,5 +1,5 @@
+import 'dotenv/config'
 import jwt from 'jsonwebtoken'
-import mongoose from 'mongoose'
 import User from '../models/User.js'
 
 const JWT_SECRET = process.env.JWT_SECRET
@@ -8,7 +8,7 @@ if (!JWT_SECRET) {
   throw new Error('JWT_SECRET não definido')
 }
 
-const OBJECT_ID_PATTERN = /^[a-f\d]{24}$/i
+const USER_ID_PATTERN = /^[1-9]\d*$/
 const ALLOWED_ORIGINS = (process.env.CLIENT_ORIGIN || '')
   .split(',')
   .map((origin) => origin.trim())
@@ -17,7 +17,6 @@ const ALLOWED_ORIGINS = (process.env.CLIENT_ORIGIN || '')
 const AUTH_WINDOW_MS = 60_000
 const AUTH_MAX_ATTEMPTS = 20
 const AUTH_TIMEOUT_MS = 8_000
-const DB_TIMEOUT_MS = 8_000
 const MAX_COOKIE_HEADER_LENGTH = 8_192
 const MAX_TOKEN_LENGTH = 4_096
 
@@ -134,50 +133,6 @@ function releaseAttempt(address) {
   else current.count -= 1
 }
 
-function waitForDatabase() {
-  const connection = mongoose.connection
-
-  if (connection.readyState === 1) {
-    if (connection.db) return Promise.resolve(connection.db)
-    return Promise.reject(new Error('database_unavailable'))
-  }
-
-  if (connection.readyState === 0 || connection.readyState === 3) {
-    return Promise.reject(new Error('database_unavailable'))
-  }
-
-  return new Promise((resolve, reject) => {
-    let settled = false
-    let timer
-
-    const cleanup = () => {
-      if (timer) clearTimeout(timer)
-      connection.removeListener('connected', onConnected)
-      connection.removeListener('error', onError)
-    }
-
-    const finish = (callback, value) => {
-      if (settled) return
-      settled = true
-      cleanup()
-      callback(value)
-    }
-
-    const onConnected = () => {
-      if (connection.db) finish(resolve, connection.db)
-      else finish(reject, new Error('database_unavailable'))
-    }
-
-    const onError = (error) => finish(reject, error)
-
-    timer = setTimeout(() => finish(reject, new Error('database_timeout')), DB_TIMEOUT_MS)
-    timer.unref?.()
-
-    connection.once('connected', onConnected)
-    connection.once('error', onError)
-  })
-}
-
 function withTimeout(promise, timeoutMs) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('timeout')), timeoutMs)
@@ -213,20 +168,18 @@ async function resolveUser(source) {
     typeof payload !== 'object' ||
     typeof payload.id !== 'string' ||
     typeof payload.exp !== 'number' ||
-    !OBJECT_ID_PATTERN.test(payload.id)
+    !USER_ID_PATTERN.test(payload.id)
   ) {
     throw new Error('unauthorized')
   }
 
-  await waitForDatabase()
-
-  const user = await User.findById(payload.id).select('_id admin').lean()
+  const user = await User.findAuthById(payload.id)
 
   if (!user) {
     throw new Error('unauthorized')
   }
 
-  return { id: String(user._id), admin: Boolean(user.admin) }
+  return { id: user.id, admin: user.admin }
 }
 
 export async function authMiddleware(source, response, next) {

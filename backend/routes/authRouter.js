@@ -11,10 +11,10 @@ const limiter = rateLimit({
 });
 
 const AuthRouter = express.Router();
-const auth = new Auth();
 
-AuthRouter.post("/login", limiter, auth.login);
-AuthRouter.post("/signup", limiter, auth.signup);
-AuthRouter.get("/find", limiter, authMiddleware, auth.findUser);
+AuthRouter.post("/login", limiter, Auth.login);
+AuthRouter.post("/signup", limiter, Auth.signup);
+AuthRouter.post("/logout", Auth.logout);
+AuthRouter.get("/find", limiter, authMiddleware, Auth.findUser);
 
 export default AuthRouter;

@@ -1,10 +1,35 @@
 {
   "type": "module",
   "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.8",
     "express": "^5.2.1",
     "express-rate-limit": "^8.7.1",
+    "jsonwebtoken": "^9.0.3",
     "react-router-dom": "^7.18.3",
     "socket.io": "^4.8.4",
+    "sqlite3": "^6.0.1",
     "ws": "^8.22.0"
-  }
+  },
+  "name": "mb2i",
+  "version": "1.0.0",
+  "description": "MB2I é um dispositivo de integração para o cuidado de plantas via monitoramento digital",
+  "main": "index.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node --watch backend/server.js",
+    "test": "node --test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gbreye/MB2I.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gbreye/MB2I/issues"
+  },
+  "homepage": "https://github.com/gbreye/MB2I#readme"
 }
