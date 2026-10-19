@@ -7,8 +7,16 @@ function Header() {
   async function meReq() {
     try {
       const res = await fetch(URL, {
-        ''
+        'method': 'GET',
+        'credentials': 'true'
       });
+
+      if(!res) {
+        return;
+      }
+
+      const data = res.data;
+      setName(data.name);
 
     } catch(error) {
       console.log(error);

@@ -17,7 +17,7 @@ class Auth {
         return res.status(400).json({ mes: "bad request!" });
       }
 
-      const user = await User.findOne({ email: email.toLowerCase() });
+      const user = await User.findOne({ email: email.toLowerCase() }).select("+password");
       if (!user || !(await bcrypt.compare(password, user.password))) {
         return res.status(401).json({ mes: "invalid credentials!" });
       }
@@ -53,9 +53,6 @@ class Auth {
         username,
         email: email.toLowerCase(),
         password: hash,
-        isEmailVerify: false,
-        plants: "",
-        esp: "",
       });
       return res.status(201).json({ mes: "usuario criado com sucesso!" });
     } catch (error) {
@@ -68,19 +65,11 @@ class Auth {
   }
 
   async findUser(req, res) {
-    try {
-      const token = req.cookies.token;
-      if (!token) return res.status(401).json({ msg: "Not Authorized" });
-
-      const decoded = jsonwebtoken.verify(token, JWT_SECRET);
-      const user = await User.findById(decoded.id);
-      if (!user) return res.status(404).json({ msg: "User Not Found!" });
-
-      return res.status(200).json({ msg: "Found!", user: user._id });
-    } catch (error) {
-      // verify lança erro se o token for inválido/expirado
-      return res.status(401).json({ msg: "Invalid Token" });
+    if (!req.user?.id) {
+      return res.status(401).json({ msg: "Not Authorized" });
     }
+
+    return res.status(200).json({ msg: "Found!", user: req.user.id });
   }
 }
 

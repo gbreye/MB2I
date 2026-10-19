@@ -1,5 +1,7 @@
 import express from "express";
 import { rateLimit } from 'express-rate-limit';
+import Auth from "../controllers/auth.js";
+import { authMiddleware } from "../middlewares/tokenMiddleware.js";
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -9,13 +11,10 @@ const limiter = rateLimit({
 });
 
 const AuthRouter = express.Router();
-
-import Auth from "../controllers/auth.js";
-
 const auth = new Auth();
 
 AuthRouter.post("/login", limiter, auth.login);
 AuthRouter.post("/signup", limiter, auth.signup);
-AuthRouter.get("/find", limiter, auth.findUser);
+AuthRouter.get("/find", limiter, authMiddleware, auth.findUser);
 
 export default AuthRouter;
