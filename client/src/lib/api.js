@@ -1,4 +1,9 @@
-const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '')
+const DEFAULT_API_URL = 'https://mb2i-backend.vercel.app'
+
+const API_URL = (import.meta.env.VITE_API_URL || DEFAULT_API_URL).replace(
+  /\/+$/,
+  '',
+)
 
 export class ApiError extends Error {
   constructor(message, status = 0, payload = null) {

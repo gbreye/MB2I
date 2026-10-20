@@ -4,7 +4,7 @@ MB2I é um dispositivo de integração para o cuidado de plantas via monitoramen
 
 ## Backend
 
-O backend usa **Express + SQLite3** (sem MongoDB).
+O backend usa **Express + SQLite** com **better-sqlite3** (sem MongoDB).
 
 ### Instalação
 
@@ -64,7 +64,13 @@ npm install
 npm run dev
 ```
 
-O cliente usa `http://localhost:3000` como API por padrão. Para apontar para outro backend, defina `VITE_API_URL` em `client/.env`.
+O cliente usa por padrão a API definida em `client/.env.example`:
+
+```env
+VITE_API_URL=https://mb2i-backend.vercel.app/
+```
+
+Para apontar para outro backend, defina `VITE_API_URL` em `client/.env` e reinicie o Vite.
 
 O frontend já utiliza:
 

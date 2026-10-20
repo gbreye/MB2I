@@ -1,4 +1,4 @@
-import sqlite3 from 'sqlite3'
+import Database from 'better-sqlite3'
 import 'dotenv/config'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -38,7 +38,6 @@ const SCHEMA = `
 `
 
 let database = null
-let writeQueue = Promise.resolve()
 
 function getDatabase() {
   if (!database) {
@@ -48,117 +47,65 @@ function getDatabase() {
   return database
 }
 
-export function dbRun(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    getDatabase().run(sql, params, function onRun(error) {
-      if (error) {
-        reject(error)
-        return
-      }
+function bind(statement, method, params) {
+  return Array.isArray(params)
+    ? statement[method](...params)
+    : statement[method](params)
+}
 
-      resolve({ lastID: this.lastID, changes: this.changes })
-    })
-  })
+export function dbRun(sql, params = []) {
+  const result = bind(getDatabase().prepare(sql), 'run', params)
+
+  return {
+    lastID: Number(result.lastInsertRowid),
+    changes: result.changes,
+  }
 }
 
 export function dbGet(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    getDatabase().get(sql, params, (error, row) => {
-      if (error) {
-        reject(error)
-        return
-      }
-
-      resolve(row ?? null)
-    })
-  })
+  return bind(getDatabase().prepare(sql), 'get', params) ?? null
 }
 
 export function dbAll(sql, params = []) {
-  return new Promise((resolve, reject) => {
-    getDatabase().all(sql, params, (error, rows) => {
-      if (error) {
-        reject(error)
-        return
-      }
-
-      resolve(rows)
-    })
-  })
+  return bind(getDatabase().prepare(sql), 'all', params)
 }
 
 export function dbExec(sql) {
-  return new Promise((resolve, reject) => {
-    getDatabase().exec(sql, (error) => {
-      if (error) {
-        reject(error)
-        return
-      }
-
-      resolve()
-    })
-  })
+  getDatabase().exec(sql)
 }
 
-/**
- * SQLite has a single write lock per database. This queue keeps
- * multi-statement operations (read + update) from interleaving.
- */
-export function serializeWrite(operation) {
-  const result = writeQueue.then(operation, operation)
-
-  writeQueue = result.then(
-    () => undefined,
-    () => undefined,
-  )
-
-  return result
+export function dbTransaction(operation) {
+  return getDatabase().transaction(operation)()
 }
 
-export async function initializeDatabase() {
+export function initializeDatabase() {
   if (database) return database
 
   fs.mkdirSync(path.dirname(databasePath), { recursive: true })
 
-  await new Promise((resolve, reject) => {
-    database = new sqlite3.Database(databasePath, (error) => {
-      if (error) {
-        database = null
-        reject(error)
-        return
-      }
+  try {
+    database = new Database(databasePath, { timeout: 5_000 })
 
-      resolve()
-    })
-  })
+    database.pragma('journal_mode = WAL')
+    database.pragma('synchronous = NORMAL')
+    database.pragma('foreign_keys = ON')
+    database.pragma('busy_timeout = 5000')
+    database.exec(SCHEMA)
 
-  await dbExec(`
-    PRAGMA journal_mode = WAL;
-    PRAGMA foreign_keys = ON;
-    PRAGMA busy_timeout = 5000;
-  `)
+    console.log(`SQLite conectado em ${databasePath}`)
 
-  await dbExec(SCHEMA)
-
-  console.log(`SQLite conectado em ${databasePath}`)
-
-  return database
+    return database
+  } catch (error) {
+    database?.close()
+    database = null
+    throw error
+  }
 }
 
-export async function closeDatabase() {
+export function closeDatabase() {
   if (!database) return
 
   const current = database
   database = null
-
-  await new Promise((resolve, reject) => {
-    current.close((error) => {
-      if (error) {
-        reject(error)
-        return
-      }
-
-      resolve()
-    })
-  })
+  current.close()
 }

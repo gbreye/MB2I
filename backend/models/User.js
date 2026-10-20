@@ -1,4 +1,4 @@
-import { dbGet, dbRun, serializeWrite } from '../config/database.js'
+import { dbGet, dbRun, dbTransaction } from '../config/database.js'
 
 const USER_COLUMNS = `
   id,
@@ -43,8 +43,8 @@ function toPublic(user) {
   return publicUser
 }
 
-async function findById(id) {
-  const row = await dbGet(
+function findById(id) {
+  const row = dbGet(
     `SELECT ${USER_COLUMNS} FROM users WHERE id = ?`,
     [id],
   )
@@ -52,8 +52,8 @@ async function findById(id) {
   return normalizeRow(row)
 }
 
-async function findAuthById(id) {
-  const row = await dbGet(
+function findAuthById(id) {
+  const row = dbGet(
     'SELECT id, admin FROM users WHERE id = ?',
     [id],
   )
@@ -63,8 +63,8 @@ async function findAuthById(id) {
   return { id: String(row.id), admin: Boolean(row.admin) }
 }
 
-async function findByEmail(email) {
-  const row = await dbGet(
+function findByEmail(email) {
+  const row = dbGet(
     `SELECT ${USER_COLUMNS} FROM users WHERE email = ? COLLATE NOCASE`,
     [email],
   )
@@ -72,10 +72,10 @@ async function findByEmail(email) {
   return normalizeRow(row)
 }
 
-async function findByEsp(esp) {
+function findByEsp(esp) {
   if (!esp) return null
 
-  const row = await dbGet(
+  const row = dbGet(
     `SELECT ${USER_COLUMNS} FROM users WHERE esp = ?`,
     [esp],
   )
@@ -83,10 +83,10 @@ async function findByEsp(esp) {
   return normalizeRow(row)
 }
 
-async function create({ username, email, password }) {
-  return serializeWrite(async () => {
+function create({ username, email, password }) {
+  return dbTransaction(() => {
     const now = new Date().toISOString()
-    const result = await dbRun(
+    const result = dbRun(
       `
         INSERT INTO users (username, email, password, plant, esp, admin, created_at, updated_at)
         VALUES (?, ?, ?, '[]', '', 0, ?, ?)
@@ -98,9 +98,9 @@ async function create({ username, email, password }) {
   })
 }
 
-async function setEsp(userId, esp) {
-  return serializeWrite(async () => {
-    const conflict = await dbGet(
+function setEsp(userId, esp) {
+  return dbTransaction(() => {
+    const conflict = dbGet(
       'SELECT id FROM users WHERE esp = ? AND id <> ?',
       [esp, userId],
     )
@@ -112,7 +112,7 @@ async function setEsp(userId, esp) {
     }
 
     const now = new Date().toISOString()
-    const result = await dbRun(
+    const result = dbRun(
       'UPDATE users SET esp = ?, updated_at = ? WHERE id = ?',
       [esp, now, userId],
     )
@@ -123,9 +123,9 @@ async function setEsp(userId, esp) {
   })
 }
 
-async function appendPlantReading(esp, reading, maxReadings = 100) {
-  return serializeWrite(async () => {
-    const row = await dbGet(
+function appendPlantReading(esp, reading, maxReadings = 100) {
+  return dbTransaction(() => {
+    const row = dbGet(
       'SELECT id, plant FROM users WHERE esp = ?',
       [esp],
     )
@@ -133,12 +133,13 @@ async function appendPlantReading(esp, reading, maxReadings = 100) {
     if (!row) return null
 
     const plant = parsePlant(row.plant)
-    plant.push({ ...reading, receivedAt: new Date().toISOString() })
+    const receivedAt = new Date().toISOString()
 
-    const now = new Date().toISOString()
-    await dbRun(
+    plant.push({ ...reading, receivedAt })
+
+    dbRun(
       'UPDATE users SET plant = ?, updated_at = ? WHERE id = ?',
-      [JSON.stringify(plant.slice(-maxReadings)), now, row.id],
+      [JSON.stringify(plant.slice(-maxReadings)), receivedAt, row.id],
     )
 
     return findById(row.id)
