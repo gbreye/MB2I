@@ -77,6 +77,7 @@ export const api = {
   },
 
   associateEsp(espId) {
+    // O backend identifica o usuário pelo cookie httpOnly; não envie userId.
     return request('/esp/associate', {
       method: 'POST',
       body: { espId },

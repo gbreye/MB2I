@@ -6,16 +6,65 @@ import User from '../models/User.js'
 dotenv.config()
 
 const JWT_SECRET = process.env.JWT_SECRET
-const COOKIE_SAME_SITE = ['lax', 'strict', 'none'].includes(process.env.COOKIE_SAME_SITE)
-  ? process.env.COOKIE_SAME_SITE
-  : 'lax'
-const COOKIE_SECURE =
-  process.env.COOKIE_SECURE === 'true' ||
-  process.env.NODE_ENV === 'production' ||
-  COOKIE_SAME_SITE === 'none'
+const VALID_SAME_SITE = new Set(['lax', 'strict', 'none'])
+const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET não definido')
+}
+
+function isSecureRequest(req) {
+  if (req?.secure) return true
+
+  const forwardedProto = req?.get?.('x-forwarded-proto')
+  return (
+    typeof forwardedProto === 'string' &&
+    forwardedProto.split(',')[0].trim() === 'https'
+  )
+}
+
+function isSecureOrigin(req) {
+  const origin = req?.get?.('origin')
+
+  if (!origin) return false
+
+  try {
+    return new URL(origin).protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+function isCrossSiteRequest(req) {
+  const origin = req?.get?.('origin')
+
+  if (!origin) return false
+
+  try {
+    return new URL(origin).hostname !== req.hostname
+  } catch {
+    return false
+  }
+}
+
+function cookiePolicy(req) {
+  const configuredSameSite = process.env.COOKIE_SAME_SITE
+  const requestedSameSite = VALID_SAME_SITE.has(configuredSameSite)
+    ? configuredSameSite
+    : null
+  const crossSite = isCrossSiteRequest(req)
+  const secureRequest = isSecureRequest(req) || isSecureOrigin(req)
+  const sameSite =
+    crossSite && secureRequest
+      ? 'none'
+      : requestedSameSite || (IS_PRODUCTION ? 'none' : 'lax')
+  const secure =
+    process.env.COOKIE_SECURE === 'true' ||
+    IS_PRODUCTION ||
+    sameSite === 'none' ||
+    secureRequest
+
+  return { sameSite, secure }
 }
 
 const isStr = (value, max = 50) =>
@@ -29,19 +78,21 @@ function signToken(user, remember) {
   )
 }
 
-function cookieOptions(maxAge) {
+function cookieOptions(maxAge, req) {
+  const { sameSite, secure } = cookiePolicy(req)
+
   return {
     httpOnly: true,
-    sameSite: COOKIE_SAME_SITE,
-    secure: COOKIE_SECURE,
+    sameSite,
+    secure,
     path: '/',
     ...(maxAge ? { maxAge } : {}),
   }
 }
 
-function setSessionCookie(res, user, remember = false) {
+function setSessionCookie(res, user, remember = false, req) {
   const maxAge = remember ? 30 * 24 * 60 * 60 * 1000 : 60 * 60 * 1000
-  res.cookie('token', signToken(user, remember), cookieOptions(maxAge))
+  res.cookie('token', signToken(user, remember), cookieOptions(maxAge, req))
 }
 
 class Auth {
@@ -58,7 +109,7 @@ class Auth {
       }
 
       const remember = req.body?.remember === true
-      setSessionCookie(res, user, remember)
+      setSessionCookie(res, user, remember, req)
 
       return res.status(200).json({
         mes: 'Login realizado com sucesso!',
@@ -84,7 +135,7 @@ class Auth {
         password: hash,
       })
 
-      setSessionCookie(res, user)
+      setSessionCookie(res, user, false, req)
 
       return res.status(201).json({
         mes: 'Usuário criado com sucesso!',
@@ -126,8 +177,8 @@ class Auth {
     }
   }
 
-  async logout(_req, res) {
-    res.clearCookie('token', cookieOptions())
+  async logout(req, res) {
+    res.clearCookie('token', cookieOptions(undefined, req))
     return res.status(200).json({ mes: 'Sessão encerrada.' })
   }
 }

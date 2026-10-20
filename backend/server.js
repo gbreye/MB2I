@@ -12,23 +12,47 @@ import EspRouter from './routes/espRouter.js'
 const app = express()
 const server = http.createServer(app)
 
+app.set('trust proxy', 1)
+
 const allowedOrigins = (process.env.CLIENT_ORIGIN || '')
   .split(',')
-  .map((origin) => origin.trim())
+  .map((origin) => origin.trim().replace(/\/+$/, ''))
   .filter(Boolean)
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function isAllowedOrigin(origin) {
+  return allowedOrigins.some((allowed) => {
+    if (allowed === '*') return true
+    if (!allowed.includes('*')) return allowed === origin
+
+    const pattern = new RegExp(
+      `^${allowed.split('*').map(escapeRegExp).join('.*')}$`,
+    )
+
+    return pattern.test(origin)
+  })
+}
+
 function corsOrigin(origin, callback) {
-  if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+  if (!origin || allowedOrigins.length === 0 || isAllowedOrigin(origin)) {
     callback(null, true)
     return
   }
 
-  callback(new Error('Origem não permitida pelo CORS'))
+  console.warn(`CORS bloqueado para origem: ${origin}`)
+  callback(null, false)
 }
 
 const corsOptions = {
   origin: corsOrigin,
   credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
+  optionsSuccessStatus: 204,
+  maxAge: 86_400,
 }
 
 export const io = new Server(server, {

@@ -83,7 +83,11 @@ function hasValidApiKey(req) {
 class Esp {
   async associate(req, res) {
     try {
-      if (!req.user?.id) {
+      // O usuário vem somente do cookie httpOnly, verificado pelo authMiddleware.
+      // Qualquer userId enviado no corpo da requisição é ignorado.
+      const userId = req.user?.id
+
+      if (!userId) {
         return res.status(401).json({ mes: 'Não autorizado' })
       }
 
@@ -95,11 +99,11 @@ class Esp {
 
       const conflict = await User.findByEsp(espId)
 
-      if (conflict && conflict.id !== req.user.id) {
+      if (conflict && conflict.id !== userId) {
         return res.status(409).json({ mes: 'ESP já associado a outro usuário' })
       }
 
-      const user = await User.setEsp(req.user.id, espId)
+      const user = await User.setEsp(userId, espId)
 
       if (!user) {
         return res.status(404).json({ mes: 'Usuário não encontrado' })

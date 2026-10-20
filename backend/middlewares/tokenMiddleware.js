@@ -71,21 +71,9 @@ function parseCookies(header) {
   return cookies
 }
 
-function extractToken(source) {
-  if (isSocket(source)) {
-    const authToken = source.handshake.auth?.token
-
-    if (typeof authToken === 'string' && authToken) return authToken
-  } else if (typeof source.cookies?.token === 'string' && source.cookies.token) {
+function extractCookieToken(source) {
+  if (typeof source.cookies?.token === 'string' && source.cookies.token) {
     return source.cookies.token
-  }
-
-  const authorization = getHeader(source, 'authorization')
-
-  if (typeof authorization === 'string') {
-    const [scheme, value] = authorization.split(' ')
-
-    if (scheme?.toLowerCase() === 'bearer' && value) return value.trim()
   }
 
   const cookieHeader = getHeader(source, 'cookie')
@@ -100,6 +88,28 @@ function extractToken(source) {
   }
 
   return null
+}
+
+function extractToken(source) {
+  if (isSocket(source)) {
+    const authToken = source.handshake.auth?.token
+
+    if (typeof authToken === 'string' && authToken) return authToken
+  } else {
+    const cookieToken = extractCookieToken(source)
+
+    if (cookieToken) return cookieToken
+  }
+
+  const authorization = getHeader(source, 'authorization')
+
+  if (typeof authorization === 'string') {
+    const [scheme, value] = authorization.split(' ')
+
+    if (scheme?.toLowerCase() === 'bearer' && value) return value.trim()
+  }
+
+  return isSocket(source) ? extractCookieToken(source) : null
 }
 
 function allowAttempt(address) {
@@ -218,7 +228,11 @@ export async function authMiddleware(source, response, next) {
     return next()
   } catch {
     if (socket) return socketNext(new Error('unauthorized'))
-    return res.status(401).json({ message: 'Não autorizado' })
+    return res.status(401).json({
+      mes: 'Sessão não encontrada ou expirada. Faça login novamente.',
+      message: 'Não autorizado',
+      code: 'UNAUTHORIZED',
+    })
   }
 }
 

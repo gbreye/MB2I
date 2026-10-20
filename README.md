@@ -32,6 +32,12 @@ Variáveis principais:
 - `DATABASE_PATH` — caminho do banco, relativo à raiz do projeto.
 - `ESP_API_KEY` — opcional; quando definido, `/esp/data` exige `x-api-key`.
 
+### CORS e cookies
+
+`CLIENT_ORIGIN` aceita uma lista separada por vírgula e também curingas, por exemplo `https://*.vercel.app`. As origens precisam incluir o protocolo e não devem ter barra no final.
+
+Em produção, quando a requisição vem de outro domínio por HTTPS, o backend define o cookie de sessão como `SameSite=None; Secure` automaticamente. O cookie continua sendo `httpOnly`; o frontend não precisa enviar o ID do usuário, apenas usar `credentials: 'include'` nas requisições.
+
 ### Rodar
 
 ```bash
