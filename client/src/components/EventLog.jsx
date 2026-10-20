@@ -1,29 +1,46 @@
+import { Panel, PanelBadge, PanelTitle } from './ui/Panel'
+
+const TONE_CLASSES = {
+  ok: 'bg-green-bright',
+  warn: 'bg-yellow',
+  info: 'bg-blue',
+  muted: 'bg-platinum-deep',
+}
+
 function EventLog({ events }) {
   return (
-    <section className="window events-window">
-      <div className="panel-head">
-        <div>
-          <p className="section-kicker">Atividade</p>
-          <h2 className="panel-title">Diário</h2>
-        </div>
-        <span className="panel-badge">{events.length}</span>
+    <Panel>
+      <div className="flex items-center justify-between gap-3">
+        <PanelTitle>Diário</PanelTitle>
+        <PanelBadge>{events.length}</PanelBadge>
       </div>
 
-      <div className="panel-body event-body">
-        <ul className="event-list">
+      {events.length === 0 ? (
+        <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
+          Nenhuma atividade nesta sessão. Os eventos aparecerão aqui quando
+          houver leituras ou ações no sistema.
+        </p>
+      ) : (
+        <ul className="scrollbar-slim mt-3 max-h-64 space-y-3 overflow-y-auto pr-1">
           {events.map((event) => (
-            <li className="event-item" key={event.id}>
+            <li className="flex gap-3" key={event.id}>
               <span
-                className={`event-led tone-${event.type}`}
+                className={`mt-1.5 size-2 shrink-0 rounded-full ${
+                  TONE_CLASSES[event.type] || 'bg-muted'
+                }`}
                 aria-hidden="true"
               />
-              <span className="event-time">{event.time}</span>
-              <span className="event-text">{event.text}</span>
+              <div className="min-w-0">
+                <p className="text-sm leading-snug text-pretty">{event.text}</p>
+                <p className="mt-0.5 text-[11px] tabular-nums text-muted">
+                  {event.time}
+                </p>
+              </div>
             </li>
           ))}
         </ul>
-      </div>
-    </section>
+      )}
+    </Panel>
   )
 }
 

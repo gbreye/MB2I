@@ -1,8 +1,22 @@
 import { useState } from 'react'
+import Button from './ui/Button'
+import DevicePanel from './DevicePanel'
+import { Panel, PanelBadge, PanelTitle } from './ui/Panel'
 
 const ESP_PATTERN = /^[A-Za-z0-9._:-]{4,64}$/
 
-function AddEsp({ espId, onAssociate, onBack }) {
+const FIELD_CLASS =
+  'h-11 min-w-0 flex-1 rounded-lg border border-line-strong bg-paper-bright px-3 text-base outline-none transition placeholder:text-muted focus:border-blue focus:ring-2 focus:ring-blue/20 disabled:cursor-not-allowed disabled:opacity-60'
+
+function AddEsp({
+  espId,
+  onAssociate,
+  onBack,
+  online = false,
+  lastSyncLabel = '',
+  onSync,
+  hasReading = false,
+}) {
   const [draft, setDraft] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -26,6 +40,7 @@ function AddEsp({ espId, onAssociate, onBack }) {
 
     try {
       await onAssociate(nextId)
+      setDraft('')
     } catch (requestError) {
       setError(
         requestError?.message ||
@@ -37,64 +52,73 @@ function AddEsp({ espId, onAssociate, onBack }) {
   }
 
   return (
-    <div className="add-esp-view">
-      <section className="window add-esp-card">
-        <div className="panel-head">
-          <div>
-            <p className="section-kicker">Novo módulo</p>
-            <h1 className="panel-title">Adicionar ESP32</h1>
-          </div>
-          <span className="panel-badge">Por ID</span>
+    <div className="mx-auto flex w-full max-w-lg flex-col gap-4">
+      <Panel>
+        <div className="flex items-center justify-between gap-3">
+          <PanelTitle as="h1">Adicionar ESP32</PanelTitle>
+          <PanelBadge>Por ID</PanelBadge>
         </div>
 
-        <div className="panel-body add-esp-body">
-          <p className="add-esp-lede">
-            Conecte um novo módulo informando o ID gravado no dispositivo.
-            O vínculo é salvo no seu perfil.
-          </p>
+        <p className="mt-2 text-sm leading-relaxed text-pretty text-muted">
+          Conecte um novo módulo informando o ID gravado no dispositivo. O
+          vínculo é salvo no seu perfil.
+        </p>
 
-          <form className="add-esp-form" onSubmit={handleSubmit} noValidate>
-            <label className="form-label" htmlFor="new-esp">
-              ID do dispositivo
-            </label>
-            <div className="add-esp-row">
-              <input
-                id="new-esp"
-                className="input"
-                name="espId"
-                type="text"
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                placeholder="ESP32-01"
-                autoComplete="off"
-                spellCheck="false"
-                aria-invalid={Boolean(error)}
-                aria-describedby="new-esp-hint"
-                disabled={isLoading}
-              />
-              <button className="btn btn-primary" type="submit" disabled={isLoading}>
-                {isLoading ? 'Vinculando...' : 'Vincular'}
-              </button>
-            </div>
-            <p
-              className={`form-hint ${error ? 'is-error' : ''}`}
-              id="new-esp-hint"
-              role={error ? 'alert' : undefined}
+        <form className="mt-4 flex flex-col gap-2" onSubmit={handleSubmit} noValidate>
+          <label
+            className="text-xs font-semibold uppercase tracking-wide text-ink-soft"
+            htmlFor="new-esp"
+          >
+            ID do dispositivo
+          </label>
+
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input
+              id="new-esp"
+              className={FIELD_CLASS}
+              name="espId"
+              type="text"
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              autoComplete="off"
+              spellCheck="false"
+              aria-invalid={Boolean(error)}
+              aria-describedby="new-esp-hint"
+              disabled={isLoading}
+            />
+            <Button
+              type="submit"
+              variant="primary"
+              className="h-11 shrink-0"
+              disabled={isLoading}
             >
-              {error || 'Exemplo: ESP32-01, ESTUFA-02 ou MB2I-QUARTO.'}
-            </p>
-          </form>
-
-          <div className="add-esp-current">
-            <span>Dispositivo atual</span>
-            <strong>{espId}</strong>
+              {isLoading ? 'Vinculando...' : 'Vincular'}
+            </Button>
           </div>
 
-          <button className="btn add-esp-back" type="button" onClick={onBack}>
-            Voltar ao painel
-          </button>
-        </div>
-      </section>
+          <p
+            className={`min-h-[1.25rem] text-xs leading-relaxed ${
+              error ? 'text-red' : 'text-muted'
+            }`}
+            id="new-esp-hint"
+            role={error ? 'alert' : undefined}
+          >
+            {error || 'Exemplo: ESP32-01, ESTUFA-02 ou MB2I-QUARTO.'}
+          </p>
+        </form>
+
+        <Button className="mt-4" onClick={onBack}>
+          Voltar ao painel
+        </Button>
+      </Panel>
+
+      <DevicePanel
+        espId={espId}
+        lastSyncLabel={lastSyncLabel}
+        onSync={onSync}
+        online={online}
+        hasReading={hasReading}
+      />
     </div>
   )
 }

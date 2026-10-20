@@ -1,59 +1,78 @@
-function DevicePanel({ espId, lastSyncLabel, onSync, onAddEsp, online = false }) {
+import Button from './ui/Button'
+import Led from './ui/Led'
+import { Panel, PanelTitle } from './ui/Panel'
+
+function DevicePanel({
+  espId,
+  lastSyncLabel,
+  onSync,
+  onAddEsp,
+  online = false,
+  hasReading = false,
+}) {
   return (
-    <section className="window device-window">
-      <div className="panel-head">
-        <div>
-          <p className="section-kicker">Conexão</p>
-          <h2 className="panel-title">Dispositivo</h2>
-        </div>
-        <span className={`device-state ${online ? '' : 'is-offline'}`}>
-          <span
-            className={`led ${online ? 'is-blinking' : 'is-offline'}`}
-            aria-hidden="true"
-          />
+    <Panel>
+      <div className="flex items-center justify-between gap-3">
+        <PanelTitle>Dispositivo</PanelTitle>
+        <span
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium ${
+            online ? 'bg-green/10 text-green-dark' : 'bg-red/10 text-red'
+          }`}
+        >
+          <Led tone={online ? 'green' : 'red'} size="xs" blinking={online} />
           {online ? 'online' : 'offline'}
         </span>
       </div>
 
-      <div className="panel-body device-body">
-        <div className="device-id">
-          <strong>{espId || 'NÃO ASSOCIADO'}</strong>
-          <span className="device-chip">ESP32</span>
+      <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+        <div className="col-span-2 min-w-0">
+          <dt className="text-[11px] uppercase tracking-wide text-muted">ID</dt>
+          <dd className="mt-0.5 truncate font-medium">
+            {espId || 'Não associado'}
+          </dd>
         </div>
+        <div className="min-w-0">
+          <dt className="text-[11px] uppercase tracking-wide text-muted">
+            Última leitura
+          </dt>
+          <dd
+            className={`mt-0.5 truncate font-medium ${
+              hasReading ? '' : 'text-muted'
+            }`}
+          >
+            {hasReading ? lastSyncLabel : 'Nenhuma'}
+          </dd>
+        </div>
+        <div className="min-w-0">
+          <dt className="text-[11px] uppercase tracking-wide text-muted">
+            Sensores
+          </dt>
+          <dd
+            className={`mt-0.5 truncate font-medium ${
+              hasReading ? '' : 'text-muted'
+            }`}
+          >
+            {hasReading ? 'Recebendo' : 'Aguardando'}
+          </dd>
+        </div>
+      </dl>
 
-        <div className="device-rows">
-          <div className="device-row">
-            <span>Sinal</span>
-            <span>−57 dBm</span>
-          </div>
-          <div className="device-row">
-            <span>Firmware</span>
-            <span>v2.4.1</span>
-          </div>
-          <div className="device-row">
-            <span>Última leitura</span>
-            <span>{lastSyncLabel}</span>
-          </div>
-          <div className="device-row">
-            <span>Sensores</span>
-            <span>3 ativos</span>
-          </div>
-          <div className="device-row">
-            <span>Uptime</span>
-            <span>14d 06h</span>
-          </div>
-        </div>
+      {!espId || !hasReading ? (
+        <p className="mt-4 flex items-center gap-2 rounded-lg bg-paper-soft px-3 py-2 text-xs text-ink-soft">
+          <Led tone="red" size="xs" />
+          {!espId
+            ? 'Nenhum ESP associado a este perfil.'
+            : 'Nenhuma leitura recebida deste dispositivo.'}
+        </p>
+      ) : null}
 
-        <div className="device-actions">
-          <button className="btn btn-primary" type="button" onClick={onSync}>
-            Sincronizar
-          </button>
-          <button className="btn" type="button" onClick={onAddEsp}>
-            Adicionar ESP
-          </button>
-        </div>
+      <div className={`mt-4 grid gap-2 ${onAddEsp ? 'sm:grid-cols-2' : ''}`}>
+        <Button variant="primary" onClick={onSync}>
+          Sincronizar
+        </Button>
+        {onAddEsp ? <Button onClick={onAddEsp}>Adicionar ESP</Button> : null}
       </div>
-    </section>
+    </Panel>
   )
 }
 

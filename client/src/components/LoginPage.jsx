@@ -1,10 +1,34 @@
 import { useState } from 'react'
-import WindowBar from './WindowBar'
-import PlaceholderFigure from './PlaceholderFigure'
-import { api } from '../lib/api'
-import plantImage from '../assets/potted-plant_1fab4.png'
+import { api } from '../lib/requests'
+import BrandMark from './ui/BrandMark'
+import Button from './ui/Button'
+import Checkbox from './ui/Checkbox'
+import { Panel } from './ui/Panel'
+import SettingsIcon from './ui/SettingsIcon'
+import Spinner from './ui/Spinner'
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const COPY = {
+  login: {
+    title: 'Entrar',
+    subtitle: 'Acesse seu painel de monitoramento.',
+    action: 'Entrar no painel',
+    loading: 'Entrando...',
+  },
+  signup: {
+    title: 'Criar conta',
+    subtitle: 'Leve seu jardim para o digital em menos de um minuto.',
+    action: 'Criar conta',
+    loading: 'Criando conta...',
+  },
+}
+
+const FIELD_CLASS =
+  'h-11 w-full rounded-lg border border-line-strong bg-paper-bright px-3 text-base outline-none transition placeholder:text-muted focus:border-blue focus:ring-2 focus:ring-blue/20 disabled:cursor-not-allowed disabled:opacity-60'
+
+const LABEL_CLASS =
+  'text-xs font-semibold uppercase tracking-wide text-ink-soft'
 
 function authErrorMessage(error, isSignup) {
   if (error?.status === 401) return 'E-mail ou senha incorretos.'
@@ -21,31 +45,13 @@ function authErrorMessage(error, isSignup) {
   return error?.message || 'Não foi possível concluir a solicitação.'
 }
 
-const COPY = {
-  login: {
-    title: 'Entrar',
-    subtitle: 'Acesse seu painel de monitoramento.',
-    action: 'Entrar no painel',
-    loading: 'Entrando...',
-    bar: 'ACESSO AO SISTEMA',
-  },
-  signup: {
-    title: 'Criar conta',
-    subtitle: 'Leve seu jardim para o digital em menos de um minuto.',
-    action: 'Criar conta',
-    loading: 'Criando conta...',
-    bar: 'NOVO CADASTRO',
-  },
-}
-
-function LoginPage({ onLogin }) {
+function LoginPage({ onLogin, onOpenSettings }) {
   const [mode, setMode] = useState('login')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [remember, setRemember] = useState(false)
-  const [terms, setTerms] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -78,10 +84,6 @@ function LoginPage({ onLogin }) {
 
     if (isSignup && password !== confirm) {
       return 'As senhas não coincidem.'
-    }
-
-    if (isSignup && !terms) {
-      return 'Aceite os termos para criar sua conta.'
     }
 
     return ''
@@ -125,232 +127,219 @@ function LoginPage({ onLogin }) {
   }
 
   return (
-    <div className="login-shell">
-      <header className="login-header">
-        <div className="login-brand">
-          <svg
-            className="brand-mark"
-            viewBox="0 0 16 16"
-            aria-hidden="true"
-          >
-            <rect x="7" y="7" width="2" height="7" rx="1" fill="#2f5e33" />
-            <rect x="3" y="3" width="5" height="4" rx="1.5" fill="#4f8f4a" />
-            <rect x="8" y="1" width="5" height="4" rx="1.5" fill="#77b85a" />
-            <rect x="4" y="12" width="8" height="2" rx="1" fill="#1c1b17" />
-          </svg>
-          <span className="brand-name">MB2I</span>
+    <div className="relative flex min-h-dvh flex-col">
+      {onOpenSettings ? (
+        <button
+          type="button"
+          onClick={onOpenSettings}
+          className="absolute right-4 top-4 grid size-9 place-items-center rounded-lg text-ink-soft transition-colors hover:bg-paper-soft hover:text-ink sm:right-6 sm:top-6"
+          aria-label="Abrir configurações do app"
+          aria-haspopup="dialog"
+          title="Configurações"
+        >
+          <SettingsIcon className="size-5" />
+        </button>
+      ) : null}
+
+      <header className="flex flex-col items-center gap-2 px-4 pb-6 pt-10 text-center">
+        <div className="flex items-center gap-2.5">
+          <BrandMark className="size-8" />
+          <span className="font-display text-2xl font-bold tracking-[-0.02em]">
+            MB2I
+          </span>
         </div>
-        <p className="login-tagline">Sistema 2.0 · Módulo botânico</p>
+        <p className="text-[0.7rem] font-medium uppercase tracking-[0.12em] text-green-dark">
+          Sistema 2.0 · Módulo botânico
+        </p>
       </header>
 
-      <main className="login-main">
-        <section className="window login-window">
-          <WindowBar title={copy.bar} />
-          <div className="window-body login-body">
-            <div className="login-grid">
-              <div className="login-illustration">
-                <PlaceholderFigure
-                  src={plantImage}
-                  alt="Planta em vaso representando a planta monitorada"
-                  label="MB2I"
-                  caption="Sua planta, monitorada em tempo real."
+      <main className="flex flex-1 justify-center px-4 pb-10">
+        <Panel padded={false} className="h-fit w-full max-w-md p-5 sm:p-6">
+          <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
+            <div
+              className="grid grid-cols-2 gap-1 rounded-lg border border-line bg-paper-soft p-1"
+              role="group"
+              aria-label="Entrar ou criar conta"
+            >
+              <button
+                type="button"
+                aria-pressed={!isSignup}
+                onClick={() => switchMode('login')}
+                disabled={isLoading}
+                className={`rounded-md py-2 text-sm font-semibold transition-colors ${
+                  isSignup
+                    ? 'text-ink-soft hover:text-ink'
+                    : 'bg-paper-bright text-ink shadow-xs'
+                }`}
+              >
+                Entrar
+              </button>
+              <button
+                type="button"
+                aria-pressed={isSignup}
+                onClick={() => switchMode('signup')}
+                disabled={isLoading}
+                className={`rounded-md py-2 text-sm font-semibold transition-colors ${
+                  isSignup
+                    ? 'bg-paper-bright text-ink shadow-xs'
+                    : 'text-ink-soft hover:text-ink'
+                }`}
+              >
+                Criar conta
+              </button>
+            </div>
+
+            <div>
+              <h1 className="font-display text-2xl font-bold tracking-[-0.03em] sm:text-3xl">
+                {copy.title}
+              </h1>
+              <p className="mt-1 text-sm leading-relaxed text-pretty text-muted">
+                {copy.subtitle}
+              </p>
+            </div>
+
+            {error ? (
+              <div
+                className="flex items-start gap-2 rounded-lg border border-red/30 bg-red/[0.08] px-3 py-2.5 text-sm font-medium text-danger"
+                role="alert"
+              >
+                <svg
+                  className="mt-0.5 size-4 shrink-0"
+                  viewBox="0 0 16 16"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M8 16A8 8 0 1 1 8 0a8 8 0 0 1 0 16zm0-13.2a1 1 0 0 0-1 1V9a1 1 0 1 0 2 0V3.8a1 1 0 0 0-1-1zm0 10.4a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4z" />
+                </svg>
+                <span>{error}</span>
+              </div>
+            ) : null}
+
+            {isSignup ? (
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="name" className={LABEL_CLASS}>
+                  Nome
+                </label>
+                <input
+                  id="name"
+                  type="text"
+                  className={FIELD_CLASS}
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="Como devemos chamar você"
+                  autoComplete="name"
+                  disabled={isLoading}
+                  required
                 />
-                <p className="illustration-caption">
-                  Seu jardim, digitalizado.
-                </p>
+              </div>
+            ) : null}
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="email" className={LABEL_CLASS}>
+                E-mail
+              </label>
+              <input
+                id="email"
+                type="email"
+                className={FIELD_CLASS}
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="seu@email.com"
+                autoComplete="email"
+                autoCapitalize="none"
+                spellCheck="false"
+                disabled={isLoading}
+                required
+              />
+            </div>
+
+            <div className={isSignup ? 'grid gap-3 sm:grid-cols-2' : ''}>
+              <div className="flex min-w-0 flex-col gap-1.5">
+                <label htmlFor="password" className={LABEL_CLASS}>
+                  Senha
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    className={`${FIELD_CLASS} pr-[76px]`}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder={isSignup ? '8+ caracteres' : 'Sua senha'}
+                    autoComplete={isSignup ? 'new-password' : 'current-password'}
+                    disabled={isLoading}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((visible) => !visible)}
+                    aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                    disabled={isLoading}
+                    className="absolute right-1 rounded-md px-2 py-1 text-xs font-semibold text-blue hover:bg-blue/[0.08]"
+                  >
+                    {showPassword ? 'Ocultar' : 'Mostrar'}
+                  </button>
+                </div>
               </div>
 
-              <form className="login-form" onSubmit={handleSubmit} noValidate>
-                <div className="auth-switch" role="group" aria-label="Entrar ou criar conta">
-                  <button
-                    type="button"
-                    aria-pressed={!isSignup}
-                    className={!isSignup ? 'is-active' : ''}
-                    onClick={() => switchMode('login')}
-                    disabled={isLoading}
-                  >
-                    Entrar
-                  </button>
-                  <button
-                    type="button"
-                    aria-pressed={isSignup}
-                    className={isSignup ? 'is-active' : ''}
-                    onClick={() => switchMode('signup')}
-                    disabled={isLoading}
-                  >
-                    Criar conta
-                  </button>
-                </div>
-
-                <div>
-                  <h1 className="login-title">{copy.title}</h1>
-                  <p className="login-subtitle">{copy.subtitle}</p>
-                </div>
-
-                {error ? (
-                  <div className="login-error" role="alert">
-                    <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-                      <path d="M8 16A8 8 0 1 1 8 0a8 8 0 0 1 0 16zm0-13.2a1 1 0 0 0-1 1V9a1 1 0 1 0 2 0V3.8a1 1 0 0 0-1-1zm0 10.4a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4z" />
-                    </svg>
-                    <span>{error}</span>
-                  </div>
-                ) : null}
-
-                {isSignup ? (
-                  <div className="form-group">
-                    <label htmlFor="name" className="form-label">
-                      Nome
-                    </label>
-                    <input
-                      id="name"
-                      type="text"
-                      className="form-input"
-                      value={name}
-                      onChange={(event) => setName(event.target.value)}
-                      placeholder="Como devemos chamar você"
-                      autoComplete="name"
-                      disabled={isLoading}
-                      required
-                    />
-                  </div>
-                ) : null}
-
-                <div className="form-group">
-                  <label htmlFor="email" className="form-label">
-                    E-mail
+              {isSignup ? (
+                <div className="flex min-w-0 flex-col gap-1.5">
+                  <label htmlFor="confirm" className={LABEL_CLASS}>
+                    Confirmar senha
                   </label>
                   <input
-                    id="email"
-                    type="email"
-                    className="form-input"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="seu@email.com"
-                    autoComplete="email"
-                    autoCapitalize="none"
-                    spellCheck="false"
+                    id="confirm"
+                    type={showPassword ? 'text' : 'password'}
+                    className={FIELD_CLASS}
+                    value={confirm}
+                    onChange={(event) => setConfirm(event.target.value)}
+                    placeholder="Repita a senha"
+                    autoComplete="new-password"
                     disabled={isLoading}
                     required
                   />
                 </div>
-
-                <div className={isSignup ? 'form-row' : ''}>
-                  <div className="form-group">
-                    <label htmlFor="password" className="form-label">
-                      Senha
-                    </label>
-                    <div className="input-with-action">
-                      <input
-                        id="password"
-                        type={showPassword ? 'text' : 'password'}
-                        className="form-input"
-                        value={password}
-                        onChange={(event) => setPassword(event.target.value)}
-                        placeholder={isSignup ? '8+ caracteres' : 'Sua senha'}
-                        autoComplete={isSignup ? 'new-password' : 'current-password'}
-                        disabled={isLoading}
-                        required
-                      />
-                      <button
-                        type="button"
-                        className="input-action"
-                        onClick={() => setShowPassword((visible) => !visible)}
-                        aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                        disabled={isLoading}
-                      >
-                        {showPassword ? 'Ocultar' : 'Mostrar'}
-                      </button>
-                    </div>
-                  </div>
-
-                  {isSignup ? (
-                    <div className="form-group">
-                      <label htmlFor="confirm" className="form-label">
-                        Confirmar senha
-                      </label>
-                      <input
-                        id="confirm"
-                        type={showPassword ? 'text' : 'password'}
-                        className="form-input"
-                        value={confirm}
-                        onChange={(event) => setConfirm(event.target.value)}
-                        placeholder="Repita a senha"
-                        autoComplete="new-password"
-                        disabled={isLoading}
-                        required
-                      />
-                    </div>
-                  ) : null}
-                </div>
-
-                {isSignup ? (
-                  <label className="checkbox-label checkbox-label--terms">
-                    <input
-                      type="checkbox"
-                      className="checkbox"
-                      checked={terms}
-                      onChange={(event) => setTerms(event.target.checked)}
-                      disabled={isLoading}
-                    />
-                    <span className="checkbox-custom" aria-hidden="true" />
-                    <span>
-                      Concordo com os <a href="#termos">termos de uso</a> e a{' '}
-                      <a href="#privacidade">política de privacidade</a>.
-                    </span>
-                  </label>
-                ) : (
-                  <div className="form-options">
-                    <label className="checkbox-label">
-                      <input
-                        type="checkbox"
-                        className="checkbox"
-                        checked={remember}
-                        onChange={(event) => setRemember(event.target.checked)}
-                        disabled={isLoading}
-                      />
-                      <span className="checkbox-custom" aria-hidden="true" />
-                      <span>Lembrar-me</span>
-                    </label>
-                    <a href="#recuperar" className="forgot-link">
-                      Esqueci a senha
-                    </a>
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  className="btn btn-primary btn-login"
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <>
-                      <span className="spinner" aria-hidden="true" />
-                      {copy.loading}
-                    </>
-                  ) : (
-                    copy.action
-                  )}
-                </button>
-
-                <p className="login-footer-note">
-                  Protótipo · Sistema 2.0 · MB2I © 1984–2026
-                </p>
-              </form>
+              ) : null}
             </div>
-          </div>
-        </section>
-      </main>
 
-      <footer className="login-footer">
-        <div className="footer-rainbow" aria-hidden="true">
-          <span />
-          <span />
-          <span />
-          <span />
-          <span />
-          <span />
-        </div>
-      </footer>
+            {!isSignup ? (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <Checkbox
+                  checked={remember}
+                  onChange={(event) => setRemember(event.target.checked)}
+                  disabled={isLoading}
+                  className="text-sm"
+                >
+                  Lembrar-me
+                </Checkbox>
+                <a
+                  href="#recuperar"
+                  className="whitespace-nowrap text-sm font-medium text-blue no-underline hover:underline hover:underline-offset-2"
+                >
+                  Esqueci a senha
+                </a>
+              </div>
+            ) : null}
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              full
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Spinner />
+                  {copy.loading}
+                </>
+              ) : (
+                copy.action
+              )}
+            </Button>
+          </form>
+        </Panel>
+      </main>
     </div>
   )
 }

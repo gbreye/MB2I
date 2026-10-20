@@ -1,90 +1,87 @@
-import { useEffect, useState } from 'react'
+import BrandMark from './ui/BrandMark'
+import Button from './ui/Button'
+import SettingsIcon from './ui/SettingsIcon'
 
 const NAV_ITEMS = [
-  { id: 'painel', label: 'Painel' },
-  { id: 'add-esp', label: 'Adicionar ESP' },
+  { id: 'painel', label: 'Painel', short: 'Painel' },
+  { id: 'add-esp', label: 'Adicionar ESP', short: 'ESP' },
 ]
 
-function Header({ active, onNavigate, user, onLogout, online = false }) {
-  const [now, setNow] = useState(() => new Date())
-
-  useEffect(() => {
-    const interval = setInterval(() => setNow(new Date()), 1000)
-    return () => clearInterval(interval)
-  }, [])
-
-  const time = now.toLocaleTimeString('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
-
+function Header({ active, onNavigate, user, onLogout, onOpenSettings }) {
   const displayName = user?.name || user?.username || user?.email || ''
   const initial = displayName.trim().charAt(0).toUpperCase() || 'M'
 
   return (
-    <header className="menu-bar">
-      <button
-        className="menu-brand"
-        type="button"
-        onClick={() => onNavigate('painel')}
-        aria-label="MB2I · ir para o painel"
-      >
-        <svg className="brand-mark" viewBox="0 0 16 16" aria-hidden="true">
-          <rect x="7" y="7" width="2" height="7" rx="1" fill="#2f5e33" />
-          <rect x="3" y="3" width="5" height="4" rx="1.5" fill="#4f8f4a" />
-          <rect x="8" y="1" width="5" height="4" rx="1.5" fill="#77b85a" />
-          <rect x="4" y="12" width="8" height="2" rx="1" fill="#1c1b17" />
-        </svg>
-        <span className="brand-name">MB2I</span>
-      </button>
+    <header className="sticky top-0 z-40 border-b border-line bg-paper-bright/90 backdrop-blur-md">
+      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-2 px-4 py-2.5 sm:gap-3 sm:px-6">
+        <button
+          type="button"
+          onClick={() => onNavigate('painel')}
+          className="-ml-1 flex items-center gap-2 rounded-lg px-1 py-1 hover:bg-paper-soft"
+          aria-label="MB2I · ir para o painel"
+        >
+          <BrandMark className="size-6" />
+          <span className="hidden font-display text-lg font-bold tracking-[-0.02em] sm:inline">
+            MB2I
+          </span>
+        </button>
 
-      <nav className="menu-nav" aria-label="Navegação principal">
-        {NAV_ITEMS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className={`menu-link ${active === item.id ? 'is-active' : ''}`}
-            onClick={() => onNavigate(item.id)}
-            aria-current={active === item.id ? 'page' : undefined}
-          >
-            {item.label}
-          </button>
-        ))}
-      </nav>
+        <nav
+          className="flex items-center gap-1 rounded-full border border-line bg-paper-soft p-1"
+          aria-label="Navegação principal"
+        >
+          {NAV_ITEMS.map((item) => {
+            const isActive = active === item.id
 
-      <div className="menu-meta">
-        <span className={`menu-online ${online ? '' : 'is-offline'}`}>
-          <span
-            className={`led ${online ? 'is-blinking' : 'is-offline'}`}
-            aria-hidden="true"
-          />
-          {online ? 'online' : 'offline'}
-        </span>
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onNavigate(item.id)}
+                aria-current={isActive ? 'page' : undefined}
+                className={`whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-ink text-paper-bright'
+                    : 'text-ink-soft hover:bg-paper-bright hover:text-ink'
+                }`}
+              >
+                <span className="sm:hidden">{item.short}</span>
+                <span className="hidden sm:inline">{item.label}</span>
+              </button>
+            )
+          })}
+        </nav>
 
-        <span className="menu-clock">
-          <time dateTime={now.toISOString()}>{time}</time>
-        </span>
-
-        {user ? (
-          <div className="menu-user">
-            <span className="user-chip" title={user.email}>
-              <span className="user-avatar" aria-hidden="true">
+        <div className="ml-auto flex items-center gap-1.5">
+          {user ? (
+            <span className="hidden min-w-0 items-center gap-2 sm:flex">
+              <span
+                className="grid size-7 shrink-0 place-items-center rounded-full bg-green-dark text-xs font-semibold uppercase text-paper-bright"
+                title={user.email}
+              >
                 {initial}
               </span>
-              <span className="user-meta">
-                <span className="user-name">
-                  {user.name || user.username || user.email}
-                </span>
-                {user.email ? (
-                  <span className="user-email">{user.email}</span>
-                ) : null}
+              <span className="hidden max-w-[140px] truncate text-sm font-medium md:inline">
+                {user.name || user.username || user.email}
               </span>
             </span>
-            <button type="button" className="btn btn-sm" onClick={onLogout}>
-              Sair
-            </button>
-          </div>
-        ) : null}
+          ) : null}
+
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            className="grid size-8 shrink-0 place-items-center rounded-lg text-ink-soft transition-colors hover:bg-paper-soft hover:text-ink"
+            aria-label="Abrir configurações do app"
+            aria-haspopup="dialog"
+            title="Configurações"
+          >
+            <SettingsIcon className="size-5" />
+          </button>
+
+          <Button type="button" size="sm" onClick={onLogout}>
+            Sair
+          </Button>
+        </div>
       </div>
     </header>
   )

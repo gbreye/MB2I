@@ -1,4 +1,6 @@
 function LineChart({ values }) {
+  if (!Array.isArray(values) || values.length < 2) return null
+
   const width = 660
   const height = 216
   const padding = 16
@@ -22,7 +24,7 @@ function LineChart({ values }) {
 
   return (
     <svg
-      className="line-chart"
+      className="block h-48 w-full rounded-lg border border-line bg-paper-bright sm:h-60"
       viewBox={`0 0 ${width} ${height}`}
       preserveAspectRatio="none"
       role="img"
@@ -38,23 +40,24 @@ function LineChart({ values }) {
           <path
             d="M 33 0 L 0 0 0 24"
             fill="none"
-            stroke="#1c1b17"
+            stroke="var(--color-ink)"
             strokeOpacity="0.07"
             strokeWidth="1"
           />
         </pattern>
       </defs>
 
-      <rect width={width} height={height} fill="#fffdf5" />
+      <rect width={width} height={height} fill="var(--color-paper-bright)" />
       <rect width={width} height={height} fill="url(#chart-grid)" />
-      <path d={area} fill="#77b85a" fillOpacity="0.14" />
+      <path d={area} fill="var(--color-green-bright)" fillOpacity="0.14" />
       <path
         d={line}
         fill="none"
-        stroke="#4f8f4a"
+        stroke="var(--color-green)"
         strokeWidth="2.5"
         strokeLinejoin="round"
         strokeLinecap="round"
+        pathLength="1"
         vectorEffect="non-scaling-stroke"
       />
     </svg>

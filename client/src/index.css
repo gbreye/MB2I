@@ -1,113 +1,202 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..800;1,14..32,400..700&display=swap');
+@import 'tailwindcss';
 
-:root {
-  /* Retro palette — the only thing that stays "old" */
-  --paper: #f5f0e1;
-  --paper-bright: #fffdf5;
-  --paper-soft: #faf6ea;
-  --platinum: #e8e2d2;
-  --platinum-deep: #d9d4c5;
-  --ink: #1c1b17;
-  --ink-soft: #4b473b;
-  --muted: #726b5a;
-  --line: rgba(28, 27, 23, 0.14);
-  --line-strong: rgba(28, 27, 23, 0.28);
-  --green: #4f8f4a;
-  --green-bright: #77b85a;
-  --green-dark: #2f5e33;
-  --blue: #2d5f9e;
-  --red: #cc4b3f;
-  --yellow: #d9a733;
-  --purple: #7a4b88;
-  --orange: #c47a4a;
+/* ---------- Design tokens ---------- */
 
-  /* Modern type system — Inter only */
+@theme {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  /* Modern radii — mixed soft and sharp */
-  --radius-xl: 24px;
-  --radius-lg: 18px;
-  --radius-md: 12px;
-  --radius-sm: 8px;
+  --color-paper: #f5f0e1;
+  --color-paper-bright: #fffdf5;
+  --color-paper-soft: #faf6ea;
+  --color-platinum: #e8e2d2;
+  --color-platinum-deep: #d9d4c5;
+  --color-ink: #1c1b17;
+  --color-ink-soft: #4b473b;
+  --color-muted: #726b5a;
+  --color-line: rgba(28, 27, 23, 0.14);
+  --color-line-strong: rgba(28, 27, 23, 0.28);
+  --color-green: #4f8f4a;
+  --color-green-bright: #77b85a;
+  --color-green-dark: #2f5e33;
+  --color-blue: #2d5f9e;
+  --color-red: #cc4b3f;
+  --color-yellow: #d9a733;
+  --color-purple: #7a4b88;
+  --color-danger: #9c3228;
+  --color-yellow-deep: #8a6a17;
+  --color-overlay: rgba(10, 12, 9, 0.56);
+
   --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
   --radius-pill: 999px;
 
-  /* Modern elevation */
   --shadow-xs: 0 1px 2px rgba(28, 27, 23, 0.06);
-  --shadow-soft: 0 1px 2px rgba(28, 27, 23, 0.05), 0 18px 44px -30px rgba(28, 27, 23, 0.4);
-  --shadow-card: 0 1px 2px rgba(28, 27, 23, 0.05), 0 10px 28px -22px rgba(28, 27, 23, 0.45);
-  --shadow-lift: 0 2px 4px rgba(28, 27, 23, 0.06), 0 24px 48px -28px rgba(28, 27, 23, 0.45);
-  --shadow-hard: 0 18px 44px -30px rgba(28, 27, 23, 0.4);
-  --shadow-small: var(--shadow-card);
+  --shadow-soft: 0 1px 2px rgba(28, 27, 23, 0.05), 0 12px 32px -26px rgba(28, 27, 23, 0.4);
+  --shadow-card: 0 1px 2px rgba(28, 27, 23, 0.05), 0 10px 24px -20px rgba(28, 27, 23, 0.4);
 
-  color: var(--ink);
-  background: var(--platinum);
-  font-family: var(--font-body);
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  color-scheme: light;
+  --animate-led-pulse: led-pulse 2.4s ease-in-out infinite;
+  --animate-toast-in: toast-in 220ms ease-out;
+  --animate-spinner: spin 0.8s linear infinite;
 }
 
-* {
-  box-sizing: border-box;
+/* ---------- Dark theme ---------- */
+
+.dark {
+  --color-paper: #1a1c17;
+  --color-paper-bright: #23261f;
+  --color-paper-soft: #2b2e26;
+  --color-platinum: #12140f;
+  --color-platinum-deep: #454a3d;
+  --color-ink: #f2eee2;
+  --color-ink-soft: #d0cabb;
+  --color-muted: #a7a091;
+  --color-line: rgba(242, 238, 226, 0.14);
+  --color-line-strong: rgba(242, 238, 226, 0.3);
+  --color-green: #79bf6b;
+  --color-green-bright: #93d47e;
+  --color-green-dark: #9ad889;
+  --color-blue: #8ab8ef;
+  --color-red: #f08f84;
+  --color-yellow: #e8c268;
+  --color-purple: #c39dd0;
+  --color-danger: #ffb4ab;
+  --color-yellow-deep: #f0cf7a;
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.35), 0 18px 40px -28px rgba(0, 0, 0, 0.9);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 30px -22px rgba(0, 0, 0, 0.9);
 }
 
-html {
-  scroll-behavior: smooth;
+/* ---------- Utilities ---------- */
+
+.settings-dialog::backdrop {
+  background: var(--color-overlay);
+  backdrop-filter: blur(2px);
 }
 
-body {
-  min-width: 320px;
-  min-height: 100vh;
-  margin: 0;
-  color: var(--ink);
-  background: var(--platinum);
+@utility scrollbar-slim {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-platinum-deep) transparent;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: var(--radius-pill);
+    background: var(--color-platinum-deep);
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
 }
 
-button,
-input {
-  font: inherit;
+/* ---------- Base ---------- */
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    background-color: var(--color-platinum);
+    color-scheme: light;
+  }
+
+  .dark {
+    color-scheme: dark;
+  }
+
+  body {
+    min-width: 320px;
+    min-height: 100vh;
+    margin: 0;
+    background-color: var(--color-platinum);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3,
+  p,
+  figure,
+  figcaption {
+    margin: 0;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+  }
+
+  button,
+  input {
+    font: inherit;
+    color: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible {
+    outline: 3px solid var(--color-blue);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--color-green);
+    color: var(--color-paper-bright);
+  }
 }
 
-button {
-  color: inherit;
+/* ---------- Keyframes ---------- */
+
+@keyframes led-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
 }
 
-button,
-a {
-  -webkit-tap-highlight-color: transparent;
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-button:focus-visible,
-a:focus-visible,
-input:focus-visible {
-  outline: 3px solid rgba(45, 95, 158, 0.55);
-  outline-offset: 3px;
-}
-
-::selection {
-  background: var(--green);
-  color: var(--paper-bright);
-}
-
-#root {
-  min-height: 100vh;
-}
-
-h1,
-h2,
-h3,
-p,
-figure,
-figcaption {
-  margin: 0;
-}
-
-img {
-  display: block;
-  max-width: 100%;
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

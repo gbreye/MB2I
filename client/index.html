@@ -5,6 +5,25 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#e8e2d2" />
+    <script>
+      ;(() => {
+        try {
+          const stored = localStorage.getItem('mb2i:theme')
+          const dark =
+            stored === 'dark' ||
+            (stored !== 'light' &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches)
+
+          document.documentElement.classList.toggle('dark', dark)
+          document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+          document
+            .querySelector('meta[name="theme-color"]')
+            ?.setAttribute('content', dark ? '#12140f' : '#e8e2d2')
+        } catch {
+          // Sem armazenamento disponível: mantém o tema claro.
+        }
+      })()
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <meta

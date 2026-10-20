@@ -1,4 +1,6 @@
 function Sparkline({ values }) {
+  if (!Array.isArray(values) || values.length < 2) return null
+
   const width = 140
   const height = 34
   const padding = 3
@@ -16,7 +18,7 @@ function Sparkline({ values }) {
 
   return (
     <svg
-      className="sparkline"
+      className="block h-8 w-full text-[var(--tone)]"
       viewBox={`0 0 ${width} ${height}`}
       preserveAspectRatio="none"
       aria-hidden="true"
@@ -24,9 +26,11 @@ function Sparkline({ values }) {
       <polyline
         points={points}
         fill="none"
+        stroke="currentColor"
         strokeWidth="2.5"
         strokeLinejoin="round"
         strokeLinecap="round"
+        pathLength="1"
       />
     </svg>
   )
