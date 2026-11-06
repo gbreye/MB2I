@@ -127,6 +127,19 @@ export function useSession({ onLogout } = {}) {
     setLastSync(null)
     resetPlant()
     clearEvents()
+
+    try {
+      for (let index = sessionStorage.length - 1; index >= 0; index -= 1) {
+        const key = sessionStorage.key(index)
+
+        if (key?.startsWith('mb2i:ai-report:')) {
+          sessionStorage.removeItem(key)
+        }
+      }
+    } catch {
+      // Sem armazenamento de sessão: nada para limpar.
+    }
+
     onLogout?.()
   }, [resetPlant, clearEvents, onLogout])
 

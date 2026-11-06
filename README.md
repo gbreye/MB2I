@@ -31,6 +31,9 @@ Variáveis principais:
 - `COOKIE_SAME_SITE` — `lax` por padrão; use `none` com HTTPS se frontend e API ficarem em sites diferentes.
 - `DATABASE_PATH` — caminho do banco, relativo à raiz do projeto.
 - `ESP_API_KEY` — opcional; quando definido, `/esp/data` exige `x-api-key`.
+- `GEMINI_API_KEY` — chave gratuita do Google AI Studio para o relatório de IA.
+- `GEMINI_MODEL` — modelo usado no relatório (padrão: `gemini-1.5-flash`).
+- `GEMINI_FALLBACK_MODEL` — modelo alternativo caso o principal não esteja disponível (padrão: `gemini-2.0-flash`).
 
 ### CORS e cookies
 
@@ -56,7 +59,23 @@ O banco é criado automaticamente em `backend/data/mb2i.sqlite` na primeira exec
 - `GET /auth/find` — requer cookie/JWT e retorna o perfil atualizado.
 - `POST /esp/associate` — requer cookie/JWT e `{ espId }`.
 - `POST /esp/data` — recebe leituras do ESP32. Se `ESP_API_KEY` estiver definido, envie `x-api-key`.
+- `POST /ai/report` — requer cookie/JWT; gera um relatório da planta com Gemini usando os dados atuais do painel.
 - `GET /` — health check simples.
+
+### Relatório de IA (Gemini)
+
+O card de relatório usa a API gratuita do Gemini no backend — a chave nunca é enviada ao navegador.
+
+1. Crie uma chave em [Google AI Studio](https://aistudio.google.com/app/apikey).
+2. Adicione ao `.env`:
+
+```env
+GEMINI_API_KEY=sua-chave
+GEMINI_MODEL=gemini-1.5-flash
+GEMINI_FALLBACK_MODEL=gemini-2.0-flash
+```
+
+O backend tenta primeiro o `GEMINI_MODEL`. Se ele não estiver disponível para a sua chave/modelo, tenta automaticamente o `GEMINI_FALLBACK_MODEL`. Reinicie o backend depois de alterar o `.env`.
 
 ### Tempo real
 

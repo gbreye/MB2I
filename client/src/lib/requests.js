@@ -36,9 +36,20 @@ export const espApi = {
   },
 }
 
+/** Relatório gerado por IA a partir dos dados do painel. */
+export const aiApi = {
+  report(context) {
+    return request('/ai/report', {
+      method: 'POST',
+      body: context,
+    })
+  },
+}
+
 /** Fachada única usada pelos componentes. */
 export const api = {
   ...authApi,
   ...espApi,
+  ...aiApi,
   associateEsp: espApi.associate,
 }

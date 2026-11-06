@@ -1,5 +1,6 @@
 import { METRIC_PRECISION } from '../constants/metrics'
 import { useReveal } from '../hooks/useReveal'
+import AiReport from './AiReport'
 import ChartPanel from './ChartPanel'
 import EventLog from './EventLog'
 import MetricCard from './MetricCard'
@@ -49,6 +50,15 @@ function Dashboard({
           />
         ))}
       </div>
+
+      <AiReport
+        summary={summary}
+        metrics={metrics}
+        chart={chart}
+        range={range}
+        espId={espId}
+        online={online}
+      />
 
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div className="min-w-0" data-reveal="left">
