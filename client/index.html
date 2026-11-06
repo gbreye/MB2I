@@ -22,6 +22,21 @@
         } catch {
           // Sem armazenamento disponível: mantém o tema claro.
         }
+
+        try {
+          const stored = localStorage.getItem('mb2i:motion') || 'full'
+          const reduced =
+            stored === 'reduced' ||
+            (stored === 'system' &&
+              window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+
+          document.documentElement.dataset.motion = reduced
+            ? 'reduced'
+            : 'full'
+        } catch {
+          // Sem armazenamento disponível: mantém as animações ativadas.
+          document.documentElement.dataset.motion = 'full'
+        }
       })()
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />

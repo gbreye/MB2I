@@ -8,6 +8,7 @@ import SessionLoader from './components/SessionLoader'
 import SettingsDialog from './components/SettingsDialog'
 import Toast from './components/Toast'
 import { useDashboard } from './hooks/useDashboard'
+import { useMotion } from './hooks/useMotion'
 import { useTheme } from './hooks/useTheme'
 import { gsap, prefersReducedMotion, REVEAL_EASE } from './lib/gsap'
 
@@ -35,6 +36,7 @@ function App() {
     handleSync,
   } = useDashboard()
   const { theme, resolvedTheme, setTheme } = useTheme()
+  const { motion, setMotion } = useMotion()
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const shellRef = useRef(null)
   const openSettings = useCallback(() => setIsSettingsOpen(true), [])
@@ -59,7 +61,10 @@ function App() {
   )
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    window.scrollTo({
+      top: 0,
+      behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    })
   }, [view])
 
   const settingsDialog = (
@@ -69,6 +74,8 @@ function App() {
       theme={theme}
       resolvedTheme={resolvedTheme}
       onThemeChange={setTheme}
+      motion={motion}
+      onMotionChange={setMotion}
     />
   )
 

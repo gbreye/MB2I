@@ -23,6 +23,12 @@ const THEME_OPTIONS = [
   },
 ]
 
+const MOTION_OPTIONS = [
+  { id: 'full', label: 'Ativadas' },
+  { id: 'system', label: 'Sistema' },
+  { id: 'reduced', label: 'Reduzidas' },
+]
+
 function SunIcon({ className = '' }) {
   return (
     <svg
@@ -96,6 +102,8 @@ function SettingsDialog({
   theme,
   resolvedTheme,
   onThemeChange,
+  motion,
+  onMotionChange,
 }) {
   const dialogRef = useRef(null)
 
@@ -290,6 +298,44 @@ function SettingsDialog({
           A escolha fica salva neste navegador. O modo “Sistema” acompanha a
           preferência do seu dispositivo.
         </p>
+
+        <div className="mt-5">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold">Animações</p>
+            <span className="text-xs text-muted">Movimento da interface</span>
+          </div>
+
+          <div
+            className="mt-2 grid grid-cols-3 gap-1 rounded-xl bg-paper-soft p-1"
+            role="group"
+            aria-label="Animações da interface"
+          >
+            {MOTION_OPTIONS.map((option) => {
+              const active = motion === option.id
+
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => onMotionChange(option.id)}
+                  className={`rounded-lg py-2 text-xs font-semibold transition-colors ${
+                    active
+                      ? 'bg-paper-bright text-ink shadow-xs'
+                      : 'text-ink-soft hover:text-ink'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              )
+            })}
+          </div>
+
+          <p className="mt-2 text-xs leading-relaxed text-muted">
+            “Ativadas” mantém as transições mesmo quando o sistema está com a
+            redução de movimento ligada.
+          </p>
+        </div>
       </div>
 
       <div className="flex justify-end p-3 sm:px-5">
