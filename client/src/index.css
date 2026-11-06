@@ -23,12 +23,9 @@
   --color-blue: #2d5f9e;
   --color-red: #cc4b3f;
   --color-yellow: #d9a733;
-  --color-yellow-bright: #e8c268;
-  --color-yellow-dark: #8a6a17;
   --color-purple: #7a4b88;
-  --color-purple-bright: #c39dd0;
-  --color-purple-dark: #9c6ab8;
   --color-danger: #9c3228;
+  --color-yellow-deep: #8a6a17;
   --color-overlay: rgba(10, 12, 9, 0.56);
 
   --radius-xs: 6px;
@@ -68,12 +65,9 @@
   --color-blue: #8ab8ef;
   --color-red: #f08f84;
   --color-yellow: #e8c268;
-  --color-yellow-bright: #f0cf7a;
-  --color-yellow-dark: #f0cf7a;
   --color-purple: #c39dd0;
-  --color-purple-bright: #d4b8e3;
-  --color-purple-dark: #c39dd0;
   --color-danger: #ffb4ab;
+  --color-yellow-deep: #f0cf7a;
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.35), 0 18px 40px -28px rgba(0, 0, 0, 0.9);
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 14px 30px -22px rgba(0, 0, 0, 0.9);
