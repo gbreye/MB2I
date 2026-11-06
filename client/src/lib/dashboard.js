@@ -34,12 +34,13 @@ export function buildDashboardSummary({
       ? 'Precisa de água'
       : 'Saudável'
   const plantState = !hasSoilData ? 'empty' : soilNeedsWater ? 'warn' : 'ok'
-  const hasChartData = chart.values.length >= 2
+  const hasChartData = Array.isArray(chart.series) && chart.series.some(s => s.values.length >= 2)
+  const hasAnyChartValues = Array.isArray(chart.series) && chart.series.some(s => s.values.length > 0)
   const chartEmptyMessage =
     readings.length === 0
       ? 'Nenhuma leitura foi recebida do dispositivo.'
-      : chart.values.length === 0
-        ? `Nenhuma leitura de umidade do solo no período de ${range}.`
+      : !hasAnyChartValues
+        ? `Nenhuma leitura no período de ${range}.`
         : 'Aguardando pelo menos duas leituras para desenhar o histórico.'
   const greeting =
     elapsedSeconds !== null

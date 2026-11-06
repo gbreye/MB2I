@@ -1,4 +1,4 @@
-import { RANGE_WINDOWS } from '../constants/metrics'
+import { RANGE_WINDOWS, METRIC_CONFIG } from '../constants/metrics'
 import { readMetricValue } from './metrics'
 
 function buildChartLabels(points, range) {
@@ -28,12 +28,12 @@ function buildChartLabels(points, range) {
   return labels
 }
 
-export function buildChartData(readings, range) {
+function buildMetricSeries(readings, range, metricKey) {
   const windowMs = RANGE_WINDOWS[range] || RANGE_WINDOWS['24h']
   const cutoff = Date.now() - windowMs
   const points = (Array.isArray(readings) ? readings : [])
     .map((reading) => {
-      const value = readMetricValue(reading, 'soil')
+      const value = readMetricValue(reading, metricKey)
       const timestamp = Date.parse(reading?.receivedAt || '')
       return { value, timestamp }
     })
@@ -43,7 +43,31 @@ export function buildChartData(readings, range) {
     )
 
   return {
+    key: metricKey,
+    label: METRIC_CONFIG[metricKey]?.label || metricKey,
+    unit: METRIC_CONFIG[metricKey]?.unit || '',
+    tone: METRIC_CONFIG[metricKey]?.tone || 'green',
     values: points.map(({ value }) => value),
-    labels: buildChartLabels(points, range),
+    timestamps: points.map(({ timestamp }) => timestamp),
+  }
+}
+
+export function buildChartData(readings, range) {
+  const soilSeries = buildMetricSeries(readings, range, 'soil')
+  const temperatureSeries = buildMetricSeries(readings, range, 'temperature')
+  const lightSeries = buildMetricSeries(readings, range, 'light')
+
+  // Use soil timestamps for labels (fallback to any series with data)
+  const referencePoints = soilSeries.timestamps.length > 0
+    ? soilSeries.timestamps.map((timestamp) => ({ timestamp }))
+    : temperatureSeries.timestamps.length > 0
+      ? temperatureSeries.timestamps.map((timestamp) => ({ timestamp }))
+      : lightSeries.timestamps.map((timestamp) => ({ timestamp }))
+
+  return {
+    series: [soilSeries, temperatureSeries, lightSeries].filter(
+      (s) => s.values.length >= 2
+    ),
+    labels: buildChartLabels(referencePoints, range),
   }
 }

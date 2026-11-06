@@ -1,4 +1,4 @@
-import { RANGE_OPTIONS } from '../constants/metrics'
+import { RANGE_OPTIONS, METRIC_CONFIG } from '../constants/metrics'
 import LineChart from './LineChart'
 import CountUp from './ui/CountUp'
 import { Panel, PanelTitle } from './ui/Panel'
@@ -13,6 +13,8 @@ function ChartPanel({
   hasChartData,
   emptyMessage,
 }) {
+  const series = chart.series || []
+
   return (
     <Panel>
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -47,7 +49,7 @@ function ChartPanel({
       <div className="mt-4">
         {hasChartData ? (
           <>
-            <LineChart key={range} values={chart.values} />
+            <LineChart key={range} series={series} />
             <div
               className="mt-2 flex justify-between gap-1 text-[11px] tabular-nums text-muted"
               aria-hidden="true"
@@ -56,15 +58,32 @@ function ChartPanel({
                 <span key={`${label}-${index}`}>{label}</span>
               ))}
             </div>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-ink-soft">
-              <span
-                className="inline-block h-0.5 w-5 rounded-full bg-green"
-                aria-hidden="true"
-              />
-              Umidade do solo
-              <span className="ml-auto rounded-full bg-green/10 px-2 py-0.5 font-medium text-green-dark">
-                ideal 45–60%
-              </span>
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-ink-soft">
+              {series.map((s) => {
+                const config = METRIC_CONFIG[s.key] || {}
+                return (
+                  <span
+                    key={s.key}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-white/50 px-2 py-0.5 font-medium"
+                    style={{ color: `var(--color-${config.tone || 'green'}-dark)` }}
+                  >
+                    <span
+                      className="inline-block h-0.5 w-5 rounded-full"
+                      style={{ backgroundColor: `var(--color-${config.tone || 'green'})` }}
+                      aria-hidden="true"
+                    />
+                    {config.label || s.key}
+                    {config.unit && (
+                      <span className="ml-1 opacity-70">
+                        {' '}
+                        {s.values.length > 0
+                          ? `${s.values[s.values.length - 1].toFixed(config.key === 'temperature' ? 1 : 0)}${config.unit}`
+                          : ''}
+                      </span>
+                    )}
+                  </span>
+                )
+              })}
             </div>
           </>
         ) : (
