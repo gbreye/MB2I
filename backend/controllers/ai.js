@@ -3,12 +3,44 @@ import 'dotenv/config'
 const GEMINI_ENDPOINT =
   'https://generativelanguage.googleapis.com/v1beta/models'
 
-const PRIMARY_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
-const FALLBACK_MODEL =
-  process.env.GEMINI_FALLBACK_MODEL || 'gemini-2.0-flash'
+// Modelos Flash atuais. O alias "-latest" acompanha o modelo vigente, então
+// ele não é desligado quando o Google aposenta uma versão específica.
+const DEFAULT_MODELS = [
+  'gemini-flash-latest',
+  'gemini-3.8-flash',
+  'gemini-3.6-flash',
+]
 
+const MAX_MODELS = 4
 const MAX_REPORT_CHARS = 4_000
-const REQUEST_TIMEOUT_MS = 25_000
+const REQUEST_TIMEOUT_MS = Number(process.env.AI_REQUEST_TIMEOUT_MS) || 12_000
+const TOTAL_TIMEOUT_MS = Number(process.env.AI_TOTAL_TIMEOUT_MS) || 25_000
+
+// Modelos já desligados pelo Google. Se a variável de ambiente ainda apontar
+// para um deles, ele é ignorado e a cadeia atual assume.
+const RETIRED_MODEL_PATTERN =
+  /^(gemini-1\.0|gemini-1\.5|gemini-2\.0)(-|$)/i
+
+const ERROR_MESSAGES = {
+  AI_NOT_CONFIGURED:
+    'O relatório de IA ainda não está configurado. Defina GEMINI_API_KEY no backend.',
+  AI_TIMEOUT:
+    'A IA demorou demais para responder. Tente novamente em instantes.',
+  AI_QUOTA:
+    'A cota gratuita da IA foi atingida. Aguarde alguns minutos e tente novamente.',
+  AI_KEY:
+    'A chave da IA foi recusada. Confira a GEMINI_API_KEY no backend.',
+  AI_MODEL_UNAVAILABLE:
+    'Os modelos de IA configurados não estão disponíveis. Defina GEMINI_MODEL com um modelo Flash atual.',
+  AI_EMPTY:
+    'A IA respondeu sem conteúdo. Tente gerar o relatório novamente.',
+  AI_UPSTREAM:
+    'A IA não conseguiu gerar o relatório agora. Tente novamente em instantes.',
+}
+
+function getApiKey() {
+  return process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || ''
+}
 
 function cleanString(value, maxLength = 120) {
   if (typeof value !== 'string') return ''
@@ -116,6 +148,35 @@ function buildPrompt(context) {
   return lines.join('\n')
 }
 
+function normalizeModelName(value) {
+  return cleanString(value, 80).replace(/^models\//i, '')
+}
+
+function modelChain() {
+  const configured = process.env.GEMINI_MODELS
+    ? process.env.GEMINI_MODELS.split(',')
+    : [process.env.GEMINI_MODEL, process.env.GEMINI_FALLBACK_MODEL]
+
+  const candidates = [...configured, ...DEFAULT_MODELS]
+    .map(normalizeModelName)
+    .filter(Boolean)
+
+  const retired = candidates.filter((model) =>
+    RETIRED_MODEL_PATTERN.test(model),
+  )
+  const active = candidates.filter(
+    (model) => !RETIRED_MODEL_PATTERN.test(model),
+  )
+
+  if (retired.length > 0) {
+    console.warn(
+      `Modelos de IA descontinuados ignorados: ${[...new Set(retired)].join(', ')}`,
+    )
+  }
+
+  return [...new Set(active)].slice(0, MAX_MODELS)
+}
+
 function extractText(data) {
   const parts = data?.candidates?.[0]?.content?.parts
 
@@ -136,13 +197,49 @@ function cleanReport(text) {
     .slice(0, MAX_REPORT_CHARS)
 }
 
-async function requestModel(model, prompt, apiKey) {
+function isModelUnavailable(status, message) {
+  if (status === 404) return true
+
+  return (
+    status === 400 &&
+    /not found|not supported|deprecated|no longer|does not exist|unknown model|unavailable/i.test(
+      message,
+    )
+  )
+}
+
+function isInvalidKey(status, message) {
+  if (status === 401 || status === 403) return true
+
+  return (
+    status === 400 &&
+    /api[\s_-]?key|permission|credential|unauthor/i.test(message)
+  )
+}
+
+function classifyFailure(status, message) {
+  if (status === 429) {
+    return { status: 429, code: 'AI_QUOTA', retryable: true }
+  }
+
+  if (isInvalidKey(status, message)) {
+    return { status: 502, code: 'AI_KEY', retryable: false }
+  }
+
+  if (isModelUnavailable(status, message)) {
+    return { status: 502, code: 'AI_MODEL_UNAVAILABLE', retryable: true }
+  }
+
+  return { status: 502, code: 'AI_UPSTREAM', retryable: true }
+}
+
+async function requestModel({ model, prompt, apiKey, timeoutMs }) {
   const response = await fetch(
     `${GEMINI_ENDPOINT}/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      signal: AbortSignal.timeout(timeoutMs),
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: {
@@ -160,55 +257,130 @@ async function requestModel(model, prompt, apiKey) {
 }
 
 async function generateReport(prompt, apiKey) {
-  const models = [PRIMARY_MODEL, FALLBACK_MODEL].filter(
-    (model, index, list) => model && list.indexOf(model) === index,
-  )
+  const models = modelChain()
+  const startedAt = Date.now()
+  const attempts = []
   let lastError = null
 
-  for (let index = 0; index < models.length; index += 1) {
-    const model = models[index]
-    const { response, data } = await requestModel(model, prompt, apiKey)
+  for (const model of models) {
+    const remaining = TOTAL_TIMEOUT_MS - (Date.now() - startedAt)
 
-    if (response.ok) {
-      const report = cleanReport(extractText(data))
+    if (remaining <= 1_000) break
 
-      if (report) return { report, model }
+    const timeoutMs = Math.min(REQUEST_TIMEOUT_MS, remaining)
+    let result
+
+    try {
+      result = await requestModel({ model, prompt, apiKey, timeoutMs })
+    } catch (error) {
+      const timedOut =
+        error?.name === 'TimeoutError' || error?.name === 'AbortError'
+
+      attempts.push({
+        model,
+        status: 0,
+        code: timedOut ? 'AI_TIMEOUT' : 'AI_UPSTREAM',
+      })
+
+      lastError = {
+        model,
+        status: timedOut ? 504 : 502,
+        code: timedOut ? 'AI_TIMEOUT' : 'AI_UPSTREAM',
+        message: cleanString(error?.message, 200),
+      }
+
+      console.error(
+        `Gemini (${model}) falhou: ${timedOut ? 'timeout' : error?.message}`,
+      )
+
+      if (timedOut) continue
+
+      break
     }
 
-    const upstreamMessage = data?.error?.message || ''
+    const { response, data } = result
+    const report = response.ok ? cleanReport(extractText(data)) : ''
+    const upstreamMessage = cleanString(
+      data?.error?.message ||
+        data?.promptFeedback?.blockReason ||
+        data?.candidates?.[0]?.finishReason,
+      300,
+    )
+
+    if (response.ok && report) {
+      return { report, model, attempts }
+    }
+
+    if (response.ok && !report) {
+      attempts.push({ model, status: response.status, code: 'AI_EMPTY' })
+      lastError = {
+        model,
+        status: 502,
+        code: 'AI_EMPTY',
+        message: upstreamMessage,
+      }
+
+      console.error(
+        `Gemini (${model}) respondeu sem texto (${upstreamMessage || 'sem motivo'})`,
+      )
+
+      // Uma resposta vazia pode ser bloqueio de segurança ou recusa do modelo;
+      // vale tentar o próximo antes de desistir.
+      continue
+    }
+
+    const failure = classifyFailure(response.status, upstreamMessage)
+
+    attempts.push({
+      model,
+      status: response.status,
+      code: failure.code,
+    })
 
     lastError = {
-      status: response.status,
-      message: upstreamMessage,
       model,
+      status: failure.status,
+      code: failure.code,
+      upstreamStatus: response.status,
+      message: upstreamMessage,
     }
 
     console.error(
       `Gemini (${model}) falhou com status ${response.status}: ${upstreamMessage}`,
     )
 
-    const modelUnavailable =
-      response.status === 404 ||
-      (response.status === 400 &&
-        /not found|not supported|deprecated|no longer/i.test(upstreamMessage))
-
-    const canTryFallback = modelUnavailable && index < models.length - 1
-
-    if (!canTryFallback) break
+    if (!failure.retryable) break
   }
 
   const error = new Error('Não foi possível gerar o relatório')
   error.upstream = lastError
+  error.attempts = attempts
   throw error
+}
+
+function errorPayload(error) {
+  const code = error.upstream?.code || 'AI_UPSTREAM'
+  const status = error.upstream?.status || 502
+
+  return {
+    status,
+    body: {
+      mes: ERROR_MESSAGES[code] || ERROR_MESSAGES.AI_UPSTREAM,
+      code,
+      modelsTried: (error.attempts || []).map((attempt) => attempt.model),
+      detail: error.upstream?.message || '',
+    },
+  }
 }
 
 class Ai {
   async report(req, res) {
-    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY
+    const apiKey = getApiKey()
 
     if (!apiKey) {
       return res.status(503).json({
-        mes: 'O relatório de IA ainda não está configurado. Defina GEMINI_API_KEY no .env do backend.',
+        mes: ERROR_MESSAGES.AI_NOT_CONFIGURED,
+        code: 'AI_NOT_CONFIGURED',
       })
     }
 
@@ -223,26 +395,64 @@ class Ai {
         generatedAt: new Date().toISOString(),
       })
     } catch (error) {
-      if (error.name === 'TimeoutError' || error.name === 'AbortError') {
-        return res.status(504).json({
-          mes: 'A IA demorou demais para responder. Tente novamente em instantes.',
+      const { status, body } = errorPayload(error)
+
+      return res.status(status).json(body)
+    }
+  }
+
+  // Diagnóstico sem consumir cota: valida a chave e lista os modelos que ela
+  // realmente pode usar. Útil para conferir as variáveis de produção.
+  async status(req, res) {
+    const apiKey = getApiKey()
+    const models = modelChain()
+
+    if (!apiKey) {
+      return res.status(200).json({
+        configured: false,
+        keyValid: false,
+        models,
+      })
+    }
+
+    try {
+      const response = await fetch(
+        `${GEMINI_ENDPOINT}?pageSize=1000&key=${encodeURIComponent(apiKey)}`,
+        { signal: AbortSignal.timeout(10_000) },
+      )
+      const data = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        return res.status(200).json({
+          configured: true,
+          keyValid: false,
+          upstreamStatus: response.status,
+          detail: cleanString(data?.error?.message, 300),
+          models,
         })
       }
 
-      if (error.upstream?.status === 429) {
-        return res.status(429).json({
-          mes: 'A cota gratuita da IA foi atingida. Aguarde alguns minutos e tente novamente.',
-        })
-      }
+      const available = (Array.isArray(data?.models) ? data.models : [])
+        .filter((model) =>
+          (model?.supportedGenerationMethods || []).includes('generateContent'),
+        )
+        .map((model) => normalizeModelName(model?.name))
+        .filter(Boolean)
 
-      if ([400, 401, 403].includes(error.upstream?.status)) {
-        return res.status(502).json({
-          mes: 'A chave da IA foi recusada. Confira a GEMINI_API_KEY no backend.',
-        })
-      }
+      return res.status(200).json({
+        configured: true,
+        keyValid: true,
+        models,
+        available,
+        missing: models.filter((model) => !available.includes(model)),
+      })
+    } catch (error) {
+      return res.status(200).json({
+        configured: true,
+        keyValid: null,
+        detail: cleanString(error?.message, 300),
+        models,
 
-      return res.status(502).json({
-        mes: 'A IA não conseguiu gerar o relatório agora. Tente novamente em instantes.',
       })
     }
   }

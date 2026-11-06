@@ -60,7 +60,7 @@ function buildContext({ summary, metrics, chart, range, espId, online }) {
 }
 
 function formatModelLabel(model) {
-  if (!model) return 'Gemini 1.5 Flash'
+  if (!model) return 'Gemini'
 
   return model
     .replace(/^models\//, '')

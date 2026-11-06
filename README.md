@@ -32,8 +32,11 @@ Variáveis principais:
 - `DATABASE_PATH` — caminho do banco, relativo à raiz do projeto.
 - `ESP_API_KEY` — opcional; quando definido, `/esp/data` exige `x-api-key`.
 - `GEMINI_API_KEY` — chave gratuita do Google AI Studio para o relatório de IA.
-- `GEMINI_MODEL` — modelo usado no relatório (padrão: `gemini-1.5-flash`).
-- `GEMINI_FALLBACK_MODEL` — modelo alternativo caso o principal não esteja disponível (padrão: `gemini-2.0-flash`).
+- `GEMINI_MODEL` — modelo usado no relatório (padrão: `gemini-flash-latest`).
+- `GEMINI_FALLBACK_MODEL` — modelo alternativo caso o principal não esteja disponível (padrão: `gemini-3.8-flash`).
+- `GEMINI_MODELS` — opcional; lista separada por vírgula que substitui os dois campos acima.
+- `AI_REQUEST_TIMEOUT_MS` — tempo máximo de cada chamada ao Gemini (padrão: `12000`).
+- `AI_TOTAL_TIMEOUT_MS` — tempo máximo somando as tentativas (padrão: `25000`).
 
 ### CORS e cookies
 
@@ -60,6 +63,7 @@ O banco é criado automaticamente em `backend/data/mb2i.sqlite` na primeira exec
 - `POST /esp/associate` — requer cookie/JWT e `{ espId }`.
 - `POST /esp/data` — recebe leituras do ESP32. Se `ESP_API_KEY` estiver definido, envie `x-api-key`.
 - `POST /ai/report` — requer cookie/JWT; gera um relatório da planta com Gemini usando os dados atuais do painel.
+- `GET /ai/status` — requer cookie/JWT; valida a chave e lista os modelos disponíveis sem consumir cota.
 - `GET /` — health check simples.
 
 ### Relatório de IA (Gemini)
@@ -71,11 +75,18 @@ O card de relatório usa a API gratuita do Gemini no backend — a chave nunca �
 
 ```env
 GEMINI_API_KEY=sua-chave
-GEMINI_MODEL=gemini-1.5-flash
-GEMINI_FALLBACK_MODEL=gemini-2.0-flash
+GEMINI_MODEL=gemini-flash-latest
+GEMINI_FALLBACK_MODEL=gemini-3.8-flash
 ```
 
-O backend tenta primeiro o `GEMINI_MODEL`. Se ele não estiver disponível para a sua chave/modelo, tenta automaticamente o `GEMINI_FALLBACK_MODEL`. Reinicie o backend depois de alterar o `.env`.
+O backend tenta os modelos em ordem: `GEMINI_MODELS` (se definido), depois
+`GEMINI_MODEL`, `GEMINI_FALLBACK_MODEL` e por fim a lista interna. Modelos
+antigos já desligados pelo Google (`gemini-1.5-flash`, `gemini-2.0-flash` etc.)
+são ignorados automaticamente. Reinicie o backend depois de alterar o `.env`.
+
+Para conferir a configuração em produção, faça login e chame `GET /ai/status`.
+A resposta mostra `configured`, `keyValid`, `models` e `available` — assim dá
+para ver se a chave chegou ao servidor e se o modelo configurado ainda existe.
 
 ### Tempo real
 
