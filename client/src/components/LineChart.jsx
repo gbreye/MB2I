@@ -1,4 +1,36 @@
+import { useRef } from 'react'
+import { useGSAP } from '@gsap/react'
+import { gsap, prefersReducedMotion } from '../lib/gsap'
+
 function LineChart({ values }) {
+  const lineRef = useRef(null)
+  const areaRef = useRef(null)
+
+  useGSAP(() => {
+    if (prefersReducedMotion() || !lineRef.current || !areaRef.current) return
+
+    gsap.fromTo(
+      lineRef.current,
+      { strokeDasharray: 1, strokeDashoffset: 1 },
+      {
+        strokeDashoffset: 0,
+        duration: 1.1,
+        ease: 'power2.inOut',
+      },
+    )
+
+    gsap.fromTo(
+      areaRef.current,
+      { autoAlpha: 0 },
+      {
+        autoAlpha: 1,
+        duration: 0.7,
+        delay: 0.2,
+        ease: 'power2.out',
+      },
+    )
+  }, [])
+
   if (!Array.isArray(values) || values.length < 2) return null
 
   const width = 660
@@ -24,7 +56,7 @@ function LineChart({ values }) {
 
   return (
     <svg
-      className="block h-48 w-full rounded-lg border border-line bg-paper-bright sm:h-60"
+      className="block h-48 w-full rounded-xl bg-paper-bright sm:h-60"
       viewBox={`0 0 ${width} ${height}`}
       preserveAspectRatio="none"
       role="img"
@@ -49,8 +81,14 @@ function LineChart({ values }) {
 
       <rect width={width} height={height} fill="var(--color-paper-bright)" />
       <rect width={width} height={height} fill="url(#chart-grid)" />
-      <path d={area} fill="var(--color-green-bright)" fillOpacity="0.14" />
       <path
+        ref={areaRef}
+        d={area}
+        fill="var(--color-green-bright)"
+        fillOpacity="0.14"
+      />
+      <path
+        ref={lineRef}
         d={line}
         fill="none"
         stroke="var(--color-green)"

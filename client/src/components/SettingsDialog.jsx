@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { gsap, prefersReducedMotion } from '../lib/gsap'
 import Button from './ui/Button'
 
 const THEME_OPTIONS = [
@@ -102,10 +103,53 @@ function SettingsDialog({
     const dialog = dialogRef.current
     if (!dialog) return
 
-    if (open && !dialog.open) {
-      dialog.showModal()
-    } else if (!open && dialog.open) {
-      dialog.close()
+    if (open) {
+      gsap.killTweensOf(dialog)
+
+      if (!dialog.open) dialog.showModal()
+
+      if (prefersReducedMotion()) return
+
+      gsap.fromTo(
+        dialog,
+        { autoAlpha: 0, y: 14, scale: 0.97 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.3,
+          ease: 'power3.out',
+          clearProps: 'opacity,visibility,transform',
+        },
+      )
+
+      gsap.from(dialog.querySelectorAll('[data-theme-option]'), {
+        autoAlpha: 0,
+        x: -8,
+        duration: 0.3,
+        delay: 0.08,
+        stagger: 0.05,
+        ease: 'power2.out',
+        clearProps: 'opacity,visibility,transform',
+      })
+    } else if (dialog.open) {
+      if (prefersReducedMotion()) {
+        dialog.close()
+        return
+      }
+
+      gsap.killTweensOf(dialog)
+      gsap.to(dialog, {
+        autoAlpha: 0,
+        y: 10,
+        scale: 0.98,
+        duration: 0.2,
+        ease: 'power2.in',
+        onComplete: () => {
+          dialog.close()
+          gsap.set(dialog, { clearProps: 'opacity,visibility,transform' })
+        },
+      })
     }
   }, [open])
 
@@ -141,21 +185,21 @@ function SettingsDialog({
       event.clientY >= rect.top &&
       event.clientY <= rect.bottom
 
-    if (!clickedInside) dialog.close()
+    if (!clickedInside) closeDialog()
   }
 
   function closeDialog() {
-    dialogRef.current?.close()
+    onClose()
   }
 
   return (
     <dialog
       ref={dialogRef}
-      className="settings-dialog fixed inset-0 z-50 m-auto h-fit max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md animate-toast-in overflow-y-auto rounded-xl border border-line bg-paper-bright p-0 text-ink shadow-soft"
+      className="settings-dialog fixed inset-0 z-50 m-auto h-fit max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-2xl bg-paper-bright p-0 text-ink shadow-soft"
       aria-labelledby="settings-title"
       onClick={handleBackdropClick}
     >
-      <div className="flex items-start justify-between gap-3 border-b border-line p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-3 p-4 sm:p-5">
         <div className="min-w-0">
           <h2
             id="settings-title"
@@ -172,7 +216,7 @@ function SettingsDialog({
           type="button"
           onClick={closeDialog}
           autoFocus
-          className="grid size-8 shrink-0 place-items-center rounded-lg text-ink-soft transition-colors hover:bg-paper-soft hover:text-ink"
+          className="grid size-8 shrink-0 place-items-center rounded-xl text-ink-soft transition-colors hover:bg-paper-soft hover:text-ink"
           aria-label="Fechar configurações"
         >
           <CloseIcon className="size-4" />
@@ -180,13 +224,7 @@ function SettingsDialog({
       </div>
 
       <div className="p-4 sm:p-5">
-        <div className="flex items-center justify-between gap-3">
-          <p
-            id="theme-label"
-            className="text-xs font-semibold uppercase tracking-wide text-ink-soft"
-          >
-            Tema
-          </p>
+        <div className="flex items-center justify-end">
           <span className="text-xs text-muted">
             Atual: {resolvedTheme === 'dark' ? 'escuro' : 'claro'}
           </span>
@@ -195,7 +233,7 @@ function SettingsDialog({
         <div
           className="mt-2 grid gap-2"
           role="radiogroup"
-          aria-labelledby="theme-label"
+          aria-label="Tema"
         >
           {THEME_OPTIONS.map((option) => {
             const active = theme === option.id
@@ -205,19 +243,20 @@ function SettingsDialog({
                 key={option.id}
                 type="button"
                 role="radio"
+                data-theme-option
                 aria-checked={active}
                 onClick={() => onThemeChange(option.id)}
-                className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
+                className={`flex items-center gap-3 rounded-xl p-3 text-left transition-colors ${
                   active
-                    ? 'border-green-dark bg-green/10'
-                    : 'border-line hover:border-line-strong hover:bg-paper-soft'
+                    ? 'bg-green/10'
+                    : 'bg-paper-soft hover:bg-paper-soft/70'
                 }`}
               >
                 <span
-                  className={`grid size-9 shrink-0 place-items-center rounded-lg border bg-paper-bright ${
+                  className={`grid size-9 shrink-0 place-items-center rounded-xl ${
                     active
-                      ? 'border-green-dark text-green-dark'
-                      : 'border-line text-ink-soft'
+                      ? 'bg-green/10 text-green-dark'
+                      : 'bg-paper-bright text-ink-soft'
                   }`}
                 >
                   <option.Icon className="size-4" />
@@ -253,7 +292,7 @@ function SettingsDialog({
         </p>
       </div>
 
-      <div className="flex justify-end border-t border-line p-3 sm:px-5">
+      <div className="flex justify-end p-3 sm:px-5">
         <Button size="sm" onClick={closeDialog}>
           Fechar
         </Button>

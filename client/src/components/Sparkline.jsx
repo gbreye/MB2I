@@ -1,4 +1,24 @@
+import { useRef } from 'react'
+import { useGSAP } from '@gsap/react'
+import { gsap, prefersReducedMotion } from '../lib/gsap'
+
 function Sparkline({ values }) {
+  const lineRef = useRef(null)
+
+  useGSAP(() => {
+    if (prefersReducedMotion() || !lineRef.current) return
+
+    gsap.fromTo(
+      lineRef.current,
+      { strokeDasharray: 1, strokeDashoffset: 1 },
+      {
+        strokeDashoffset: 0,
+        duration: 0.9,
+        ease: 'power2.out',
+      },
+    )
+  }, [])
+
   if (!Array.isArray(values) || values.length < 2) return null
 
   const width = 140
@@ -24,6 +44,7 @@ function Sparkline({ values }) {
       aria-hidden="true"
     >
       <polyline
+        ref={lineRef}
         points={points}
         fill="none"
         stroke="currentColor"

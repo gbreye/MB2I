@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { gsap, prefersReducedMotion } from '../lib/gsap'
 
 const STORAGE_KEY = 'mb2i:theme'
 const THEMES = new Set(['light', 'dark', 'system'])
@@ -23,6 +24,7 @@ export function useTheme() {
   const [resolvedTheme, setResolvedTheme] = useState(() =>
     theme === 'system' ? getSystemTheme() : theme,
   )
+  const hasMounted = useRef(false)
 
   useEffect(() => {
     const media = window.matchMedia(MEDIA_QUERY)
@@ -46,7 +48,22 @@ export function useTheme() {
     root.style.colorScheme = resolvedTheme
     document
       .querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', isDark ? '#12140f' : '#e8e2d2')
+      ?.setAttribute('content', isDark ? '#121212' : '#e8e2d2')
+
+    if (hasMounted.current && !prefersReducedMotion()) {
+      gsap.fromTo(
+        document.body,
+        { opacity: 0.5 },
+        {
+          opacity: 1,
+          duration: 0.4,
+          ease: 'power2.out',
+          clearProps: 'opacity',
+        },
+      )
+    }
+
+    hasMounted.current = true
   }, [resolvedTheme])
 
   const setTheme = useCallback((nextTheme) => {

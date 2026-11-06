@@ -1,4 +1,5 @@
 import { METRIC_PRECISION } from '../constants/metrics'
+import { useReveal } from '../hooks/useReveal'
 import ChartPanel from './ChartPanel'
 import EventLog from './EventLog'
 import MetricCard from './MetricCard'
@@ -15,9 +16,14 @@ function Dashboard({
   espId,
   online,
 }) {
+  const scope = useReveal()
+
   return (
-    <div className="flex flex-col gap-4 sm:gap-5">
-      <Panel className="grid items-center gap-4 sm:grid-cols-[minmax(0,1fr)_auto]">
+    <div ref={scope} className="flex flex-col gap-4 sm:gap-5">
+      <Panel
+        data-reveal
+        className="grid items-center gap-4 sm:grid-cols-[minmax(0,1fr)_auto]"
+      >
         <div className="min-w-0">
           <h1 className="font-display text-2xl font-bold tracking-[-0.03em] sm:text-3xl">
             Olá, {summary.displayFirstName}.
@@ -45,17 +51,21 @@ function Dashboard({
       </div>
 
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-        <ChartPanel
-          chart={chart}
-          range={range}
-          onRangeChange={onRangeChange}
-          soilValue={metrics.soil.value}
-          hasSoilData={summary.hasSoilData}
-          hasChartData={summary.hasChartData}
-          emptyMessage={summary.chartEmptyMessage}
-        />
+        <div className="min-w-0" data-reveal="left">
+          <ChartPanel
+            chart={chart}
+            range={range}
+            onRangeChange={onRangeChange}
+            soilValue={metrics.soil.value}
+            hasSoilData={summary.hasSoilData}
+            hasChartData={summary.hasChartData}
+            emptyMessage={summary.chartEmptyMessage}
+          />
+        </div>
 
-        <EventLog events={events} />
+        <div className="min-w-0" data-reveal="right">
+          <EventLog events={events} />
+        </div>
       </div>
     </div>
   )

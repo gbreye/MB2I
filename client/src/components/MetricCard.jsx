@@ -1,3 +1,7 @@
+import { useRef } from 'react'
+import { useGSAP } from '@gsap/react'
+import { gsap, prefersReducedMotion } from '../lib/gsap'
+import CountUp from './ui/CountUp'
 import Sparkline from './Sparkline'
 
 function formatTrend(metric, precision) {
@@ -33,6 +37,7 @@ const TONES = {
 }
 
 function MetricCard({ metric, precision, showSparkline = true }) {
+  const progressRef = useRef(null)
   const history = Array.isArray(metric.history) ? metric.history : []
   const hasValue =
     typeof metric.value === 'number' && Number.isFinite(metric.value)
@@ -46,16 +51,29 @@ function MetricCard({ metric, precision, showSparkline = true }) {
   const hasHistory = history.length >= 2
   const tone = TONES[metric.tone] || TONES.green
 
+  useGSAP(() => {
+    if (prefersReducedMotion() || !progressRef.current) return
+
+    gsap.from(progressRef.current, {
+      scaleX: 0,
+      transformOrigin: 'left center',
+      duration: 0.9,
+      ease: 'power2.out',
+      delay: 0.15,
+    })
+  }, [])
+
   return (
     <article
-      className={`${tone} min-w-0 rounded-xl border border-line bg-paper-bright p-4 shadow-xs transition-[border-color,box-shadow] duration-200 hover:border-line-strong hover:shadow-card`}
+      data-reveal="scale"
+      className={`${tone} min-w-0 rounded-2xl bg-paper-bright p-4 shadow-xs transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-card`}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="truncate font-display text-[0.68rem] font-semibold uppercase tracking-[0.08em] text-ink-soft">
+        <span className="truncate font-sans text-xs font-semibold text-ink-soft">
           {metric.label}
         </span>
         <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-[0.7rem] font-medium tabular-nums ${
+          className={`shrink-0 rounded-pill px-2 py-0.5 text-[0.7rem] font-medium tabular-nums ${
             isTrendEmpty ? 'text-muted' : 'bg-ink/5 text-muted'
           }`}
         >
@@ -66,9 +84,11 @@ function MetricCard({ metric, precision, showSparkline = true }) {
       <div className="mt-3 flex min-h-8 items-baseline gap-1">
         {hasValue ? (
           <>
-            <span className="font-display text-3xl font-bold leading-none tracking-[-0.04em] tabular-nums">
-              {metric.value.toFixed(precision)}
-            </span>
+            <CountUp
+              value={metric.value}
+              precision={precision}
+              className="font-sans text-3xl font-bold leading-none tracking-[-0.04em] tabular-nums"
+            />
             <span className="text-xs font-medium text-muted">{metric.unit}</span>
           </>
         ) : (
@@ -92,9 +112,10 @@ function MetricCard({ metric, precision, showSparkline = true }) {
         )}
       </div>
 
-      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-ink/10">
+      <div className="mt-2 h-1.5 overflow-hidden rounded-pill bg-ink/10">
         <div
-          className="h-full rounded-full bg-[var(--tone)] transition-[width] duration-500"
+          ref={progressRef}
+          className="h-full rounded-pill bg-[var(--tone)] transition-[width] duration-500"
           style={{ width: `${progress}%` }}
         />
       </div>

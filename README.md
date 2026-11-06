@@ -78,6 +78,15 @@ VITE_API_URL=https://mb2i-backend.vercel.app/
 
 Para apontar para outro backend, defina `VITE_API_URL` em `client/.env` e reinicie o Vite.
 
+Em desenvolvimento, use o mesmo host no frontend e na API. Se o Vite abre em
+`http://localhost:5173`, configure `VITE_API_URL=http://localhost:3000/` — não
+use `127.0.0.1` na API. O navegador considera `localhost` e `127.0.0.1` hosts
+diferentes, e o cookie `httpOnly` não será enviado ao Socket.IO nem às chamadas
+seguintes, deixando o tempo real e os eventos sem atualização.
+
+Depois de alterar `VITE_API_URL`, reinicie o Vite e faça login novamente para
+criar o cookie no host correto.
+
 O frontend já utiliza:
 
 - login, cadastro, restauração de sessão e logout reais;

@@ -1,3 +1,6 @@
+import { useRef } from 'react'
+import { useGSAP } from '@gsap/react'
+import { gsap, prefersReducedMotion } from '../lib/gsap'
 import { Panel, PanelBadge, PanelTitle } from './ui/Panel'
 
 const TONE_CLASSES = {
@@ -8,6 +11,24 @@ const TONE_CLASSES = {
 }
 
 function EventLog({ events }) {
+  const listRef = useRef(null)
+
+  useGSAP(
+    () => {
+      if (prefersReducedMotion() || !listRef.current) return
+
+      gsap.from(Array.from(listRef.current.children), {
+        autoAlpha: 0,
+        x: -10,
+        duration: 0.35,
+        stagger: 0.05,
+        ease: 'power2.out',
+        clearProps: 'opacity,visibility,transform',
+      })
+    },
+    { dependencies: [events.length], scope: listRef },
+  )
+
   return (
     <Panel>
       <div className="flex items-center justify-between gap-3">
@@ -21,7 +42,10 @@ function EventLog({ events }) {
           houver leituras ou ações no sistema.
         </p>
       ) : (
-        <ul className="scrollbar-slim mt-3 max-h-64 space-y-3 overflow-y-auto pr-1">
+        <ul
+          ref={listRef}
+          className="scrollbar-slim mt-3 max-h-64 space-y-3 overflow-y-auto pr-1"
+        >
           {events.map((event) => (
             <li className="flex gap-3" key={event.id}>
               <span

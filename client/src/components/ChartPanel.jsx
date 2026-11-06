@@ -1,5 +1,6 @@
 import { RANGE_OPTIONS } from '../constants/metrics'
 import LineChart from './LineChart'
+import CountUp from './ui/CountUp'
 import { Panel, PanelTitle } from './ui/Panel'
 import Segmented from './ui/Segmented'
 
@@ -18,7 +19,7 @@ function ChartPanel({
         <div className="min-w-0">
           <PanelTitle>Saúde do solo</PanelTitle>
           <p
-            className={`mt-1 font-display tabular-nums ${
+            className={`mt-1 font-sans tabular-nums ${
               hasSoilData
                 ? 'text-3xl font-bold leading-none tracking-[-0.04em]'
                 : 'text-xl font-semibold leading-none text-muted'
@@ -26,7 +27,7 @@ function ChartPanel({
           >
             {hasSoilData ? (
               <>
-                {soilValue.toFixed(0)}
+                <CountUp value={soilValue} precision={0} />
                 <span className="ml-1 text-sm font-medium text-muted">%</span>
               </>
             ) : (
@@ -46,7 +47,7 @@ function ChartPanel({
       <div className="mt-4">
         {hasChartData ? (
           <>
-            <LineChart values={chart.values} />
+            <LineChart key={range} values={chart.values} />
             <div
               className="mt-2 flex justify-between gap-1 text-[11px] tabular-nums text-muted"
               aria-hidden="true"
@@ -68,7 +69,7 @@ function ChartPanel({
           </>
         ) : (
           <div
-            className="flex h-48 flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-line-strong bg-paper-soft px-4 text-center text-sm text-muted sm:h-60"
+            className="flex h-48 flex-col items-center justify-center gap-1.5 rounded-xl bg-paper-soft px-4 text-center text-sm text-muted sm:h-60"
             role="status"
           >
             <strong className="font-display text-sm font-semibold text-ink-soft">

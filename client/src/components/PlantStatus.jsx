@@ -1,4 +1,7 @@
+import { useRef } from 'react'
+import { useGSAP } from '@gsap/react'
 import plantImage from '../assets/potted-plant_1fab4.png'
+import { gsap, prefersReducedMotion } from '../lib/gsap'
 import Led from './ui/Led'
 
 const STATES = {
@@ -8,7 +11,21 @@ const STATES = {
 }
 
 function PlantStatus({ status, state = 'ok', espId, online = false }) {
+  const plantRef = useRef(null)
   const tone = STATES[state] || STATES.ok
+
+  useGSAP(() => {
+    if (prefersReducedMotion() || state === 'empty' || !plantRef.current) return
+
+    gsap.to(plantRef.current, {
+      y: -3,
+      duration: 1.9,
+      delay: 0.35,
+      repeat: -1,
+      yoyo: true,
+      ease: 'sine.inOut',
+    })
+  }, [state])
 
   return (
     <div className="flex min-w-0 items-center gap-3">
@@ -16,6 +33,7 @@ function PlantStatus({ status, state = 'ok', espId, online = false }) {
         className={`grid size-14 shrink-0 place-items-center rounded-full ${tone.ring}`}
       >
         <img
+          ref={plantRef}
           src={plantImage}
           alt="Planta monitorada"
           className={`size-11 object-contain ${

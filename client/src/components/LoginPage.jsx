@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { useGSAP } from '@gsap/react'
+import { gsap, prefersReducedMotion, REVEAL_EASE } from '../lib/gsap'
 import { api } from '../lib/requests'
 import BrandMark from './ui/BrandMark'
 import Button from './ui/Button'
@@ -25,10 +27,10 @@ const COPY = {
 }
 
 const FIELD_CLASS =
-  'h-11 w-full rounded-lg border border-line-strong bg-paper-bright px-3 text-base outline-none transition placeholder:text-muted focus:border-blue focus:ring-2 focus:ring-blue/20 disabled:cursor-not-allowed disabled:opacity-60'
+  'h-11 w-full rounded-xl bg-paper-soft px-3 text-base outline-none transition placeholder:text-muted focus:ring-2 focus:ring-blue/20 disabled:cursor-not-allowed disabled:opacity-60'
 
 const LABEL_CLASS =
-  'text-xs font-semibold uppercase tracking-wide text-ink-soft'
+  'text-sm font-medium text-ink-soft'
 
 function authErrorMessage(error, isSignup) {
   if (error?.status === 401) return 'E-mail ou senha incorretos.'
@@ -55,6 +57,34 @@ function LoginPage({ onLogin, onOpenSettings }) {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const scope = useRef(null)
+
+  useGSAP(
+    () => {
+      if (prefersReducedMotion() || !scope.current) return
+
+      const timeline = gsap.timeline({
+        defaults: {
+          ease: REVEAL_EASE,
+          clearProps: 'opacity,visibility,transform',
+        },
+      })
+
+      timeline
+        .from('[data-login-brand]', { autoAlpha: 0, y: -14, duration: 0.45 })
+        .from(
+          '[data-login-card]',
+          { autoAlpha: 0, y: 24, scale: 0.97, duration: 0.55 },
+          '-=0.2',
+        )
+        .from(
+          '[data-reveal]',
+          { autoAlpha: 0, y: 14, duration: 0.4, stagger: 0.055 },
+          '-=0.35',
+        )
+    },
+    { scope },
+  )
 
   const copy = COPY[mode]
   const isSignup = mode === 'signup'
@@ -127,12 +157,13 @@ function LoginPage({ onLogin, onOpenSettings }) {
   }
 
   return (
-    <div className="relative flex min-h-dvh flex-col">
+    <div ref={scope} className="relative flex min-h-dvh flex-col lg:flex-row">
       {onOpenSettings ? (
         <button
           type="button"
           onClick={onOpenSettings}
-          className="absolute right-4 top-4 grid size-9 place-items-center rounded-lg text-ink-soft transition-colors hover:bg-paper-soft hover:text-ink sm:right-6 sm:top-6"
+          data-reveal
+          className="absolute right-4 top-4 z-20 grid size-9 place-items-center rounded-xl text-ink-soft transition-colors hover:bg-paper-soft hover:text-ink sm:right-6 sm:top-6"
           aria-label="Abrir configurações do app"
           aria-haspopup="dialog"
           title="Configurações"
@@ -141,23 +172,29 @@ function LoginPage({ onLogin, onOpenSettings }) {
         </button>
       ) : null}
 
-      <header className="flex flex-col items-center gap-2 px-4 pb-6 pt-10 text-center">
-        <div className="flex items-center gap-2.5">
-          <BrandMark className="size-8" />
-          <span className="font-display text-2xl font-bold tracking-[-0.02em]">
-            MB2I
-          </span>
-        </div>
-        <p className="text-[0.7rem] font-medium uppercase tracking-[0.12em] text-green-dark">
-          Sistema 2.0 · Módulo botânico
-        </p>
-      </header>
+      <div className="flex min-h-dvh w-full flex-col px-4 pb-10 sm:px-6 lg:w-1/2 lg:items-center lg:justify-center lg:gap-8 lg:bg-paper-bright lg:px-12 lg:pb-12 lg:shadow-soft">
+        <header
+          data-login-brand
+          className="flex w-full max-w-md flex-col items-start gap-3 pt-10 pb-6 text-left lg:items-center lg:pt-0 lg:pb-0 lg:text-center"
+        >
+          <div className="flex items-center gap-2.5">
+            <BrandMark className="size-8" />
+            <span className="font-display text-2xl font-bold tracking-[-0.02em]">
+              MB2I
+            </span>
+          </div>
+        </header>
 
-      <main className="flex flex-1 justify-center px-4 pb-10">
-        <Panel padded={false} className="h-fit w-full max-w-md p-5 sm:p-6">
+        <main className="flex w-full max-w-md flex-1 flex-col lg:flex-none">
+          <Panel
+            data-login-card
+            padded={false}
+            className="h-fit w-full p-5 sm:p-6 lg:bg-transparent lg:p-0 lg:shadow-none"
+          >
           <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
             <div
-              className="grid grid-cols-2 gap-1 rounded-lg border border-line bg-paper-soft p-1"
+              data-reveal
+              className="grid grid-cols-2 gap-1 rounded-xl bg-paper-soft p-1"
               role="group"
               aria-label="Entrar ou criar conta"
             >
@@ -166,7 +203,7 @@ function LoginPage({ onLogin, onOpenSettings }) {
                 aria-pressed={!isSignup}
                 onClick={() => switchMode('login')}
                 disabled={isLoading}
-                className={`rounded-md py-2 text-sm font-semibold transition-colors ${
+                className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
                   isSignup
                     ? 'text-ink-soft hover:text-ink'
                     : 'bg-paper-bright text-ink shadow-xs'
@@ -179,7 +216,7 @@ function LoginPage({ onLogin, onOpenSettings }) {
                 aria-pressed={isSignup}
                 onClick={() => switchMode('signup')}
                 disabled={isLoading}
-                className={`rounded-md py-2 text-sm font-semibold transition-colors ${
+                className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
                   isSignup
                     ? 'bg-paper-bright text-ink shadow-xs'
                     : 'text-ink-soft hover:text-ink'
@@ -189,7 +226,7 @@ function LoginPage({ onLogin, onOpenSettings }) {
               </button>
             </div>
 
-            <div>
+            <div data-reveal>
               <h1 className="font-display text-2xl font-bold tracking-[-0.03em] sm:text-3xl">
                 {copy.title}
               </h1>
@@ -200,7 +237,7 @@ function LoginPage({ onLogin, onOpenSettings }) {
 
             {error ? (
               <div
-                className="flex items-start gap-2 rounded-lg border border-red/30 bg-red/[0.08] px-3 py-2.5 text-sm font-medium text-danger"
+                className="flex items-start gap-2 rounded-xl bg-red/[0.08] px-3 py-2.5 text-sm font-medium text-danger"
                 role="alert"
               >
                 <svg
@@ -216,7 +253,7 @@ function LoginPage({ onLogin, onOpenSettings }) {
             ) : null}
 
             {isSignup ? (
-              <div className="flex flex-col gap-1.5">
+              <div data-reveal className="flex flex-col gap-1.5">
                 <label htmlFor="name" className={LABEL_CLASS}>
                   Nome
                 </label>
@@ -234,7 +271,7 @@ function LoginPage({ onLogin, onOpenSettings }) {
               </div>
             ) : null}
 
-            <div className="flex flex-col gap-1.5">
+            <div data-reveal className="flex flex-col gap-1.5">
               <label htmlFor="email" className={LABEL_CLASS}>
                 E-mail
               </label>
@@ -253,7 +290,7 @@ function LoginPage({ onLogin, onOpenSettings }) {
               />
             </div>
 
-            <div className={isSignup ? 'grid gap-3 sm:grid-cols-2' : ''}>
+            <div data-reveal className={isSignup ? 'grid gap-3 sm:grid-cols-2' : ''}>
               <div className="flex min-w-0 flex-col gap-1.5">
                 <label htmlFor="password" className={LABEL_CLASS}>
                   Senha
@@ -275,7 +312,7 @@ function LoginPage({ onLogin, onOpenSettings }) {
                     onClick={() => setShowPassword((visible) => !visible)}
                     aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                     disabled={isLoading}
-                    className="absolute right-1 rounded-md px-2 py-1 text-xs font-semibold text-blue hover:bg-blue/[0.08]"
+                    className="absolute right-1 rounded-lg px-2 py-1 text-xs font-semibold text-blue hover:bg-blue/[0.08]"
                   >
                     {showPassword ? 'Ocultar' : 'Mostrar'}
                   </button>
@@ -303,7 +340,7 @@ function LoginPage({ onLogin, onOpenSettings }) {
             </div>
 
             {!isSignup ? (
-              <div className="flex flex-wrap items-center justify-between gap-3">
+              <div data-reveal className="flex flex-wrap items-center justify-between gap-3">
                 <Checkbox
                   checked={remember}
                   onChange={(event) => setRemember(event.target.checked)}
@@ -326,6 +363,7 @@ function LoginPage({ onLogin, onOpenSettings }) {
               variant="primary"
               size="lg"
               full
+              data-reveal
               disabled={isLoading}
             >
               {isLoading ? (
@@ -340,6 +378,7 @@ function LoginPage({ onLogin, onOpenSettings }) {
           </form>
         </Panel>
       </main>
+      </div>
     </div>
   )
 }

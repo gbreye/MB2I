@@ -21,7 +21,7 @@ export function useSession({ onLogout } = {}) {
   const { metrics, readings, applyPlant, resetPlant, lastReadingAt } =
     usePlantData()
   const { events, addEvent, clearEvents } = useEventLog()
-  const { toast, showToast } = useToast()
+  const { toast, toastLeaving, dismissToast, showToast } = useToast()
 
   const applyProfile = useCallback(
     (profile) => {
@@ -188,6 +188,8 @@ export function useSession({ onLogout } = {}) {
     readings,
     events,
     toast,
+    toastLeaving,
+    dismissToast,
     handleLogin,
     handleLogout,
     handleAssociate,

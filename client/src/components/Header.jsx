@@ -1,3 +1,4 @@
+import { useReveal } from '../hooks/useReveal'
 import BrandMark from './ui/BrandMark'
 import Button from './ui/Button'
 import SettingsIcon from './ui/SettingsIcon'
@@ -10,14 +11,21 @@ const NAV_ITEMS = [
 function Header({ active, onNavigate, user, onLogout, onOpenSettings }) {
   const displayName = user?.name || user?.username || user?.email || ''
   const initial = displayName.trim().charAt(0).toUpperCase() || 'M'
+  const scope = useReveal({ y: -10, stagger: 0.05 })
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-paper-bright/90 backdrop-blur-md">
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-2 px-4 py-2.5 sm:gap-3 sm:px-6">
+    <header
+      ref={scope}
+      className="sticky top-0 z-40 bg-paper-bright/90 backdrop-blur-md"
+    >
+      <div
+        className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-2 px-4 py-2.5 sm:gap-3 sm:px-6"
+      >
         <button
           type="button"
+          data-reveal
           onClick={() => onNavigate('painel')}
-          className="-ml-1 flex items-center gap-2 rounded-lg px-1 py-1 hover:bg-paper-soft"
+          className="-ml-1 flex items-center gap-2 rounded-xl px-1 py-1 hover:bg-paper-soft"
           aria-label="MB2I · ir para o painel"
         >
           <BrandMark className="size-6" />
@@ -27,7 +35,8 @@ function Header({ active, onNavigate, user, onLogout, onOpenSettings }) {
         </button>
 
         <nav
-          className="flex items-center gap-1 rounded-full border border-line bg-paper-soft p-1"
+          data-reveal
+          className="flex items-center gap-1 rounded-full bg-paper-soft p-1"
           aria-label="Navegação principal"
         >
           {NAV_ITEMS.map((item) => {
@@ -52,7 +61,7 @@ function Header({ active, onNavigate, user, onLogout, onOpenSettings }) {
           })}
         </nav>
 
-        <div className="ml-auto flex items-center gap-1.5">
+        <div data-reveal className="ml-auto flex items-center gap-1.5">
           {user ? (
             <span className="hidden min-w-0 items-center gap-2 sm:flex">
               <span
@@ -70,7 +79,7 @@ function Header({ active, onNavigate, user, onLogout, onOpenSettings }) {
           <button
             type="button"
             onClick={onOpenSettings}
-            className="grid size-8 shrink-0 place-items-center rounded-lg text-ink-soft transition-colors hover:bg-paper-soft hover:text-ink"
+            className="grid size-8 shrink-0 place-items-center rounded-xl text-ink-soft transition-colors hover:bg-paper-soft hover:text-ink"
             aria-label="Abrir configurações do app"
             aria-haspopup="dialog"
             title="Configurações"

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useReveal } from '../hooks/useReveal'
 import Button from './ui/Button'
 import DevicePanel from './DevicePanel'
 import { Panel, PanelBadge, PanelTitle } from './ui/Panel'
@@ -6,7 +7,7 @@ import { Panel, PanelBadge, PanelTitle } from './ui/Panel'
 const ESP_PATTERN = /^[A-Za-z0-9._:-]{4,64}$/
 
 const FIELD_CLASS =
-  'h-11 min-w-0 flex-1 rounded-lg border border-line-strong bg-paper-bright px-3 text-base outline-none transition placeholder:text-muted focus:border-blue focus:ring-2 focus:ring-blue/20 disabled:cursor-not-allowed disabled:opacity-60'
+  'h-11 min-w-0 flex-1 rounded-xl bg-paper-soft px-3 text-base outline-none transition placeholder:text-muted focus:ring-2 focus:ring-blue/20 disabled:cursor-not-allowed disabled:opacity-60'
 
 function AddEsp({
   espId,
@@ -20,6 +21,7 @@ function AddEsp({
   const [draft, setDraft] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const scope = useReveal()
 
   async function handleSubmit(event) {
     event.preventDefault()
@@ -52,8 +54,8 @@ function AddEsp({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-lg flex-col gap-4">
-      <Panel>
+    <div ref={scope} className="mx-auto flex w-full max-w-lg flex-col gap-4">
+      <Panel data-reveal="scale">
         <div className="flex items-center justify-between gap-3">
           <PanelTitle as="h1">Adicionar ESP32</PanelTitle>
           <PanelBadge>Por ID</PanelBadge>
@@ -66,7 +68,7 @@ function AddEsp({
 
         <form className="mt-4 flex flex-col gap-2" onSubmit={handleSubmit} noValidate>
           <label
-            className="text-xs font-semibold uppercase tracking-wide text-ink-soft"
+            className="text-sm font-medium text-ink-soft"
             htmlFor="new-esp"
           >
             ID do dispositivo
@@ -113,6 +115,7 @@ function AddEsp({
       </Panel>
 
       <DevicePanel
+        data-reveal
         espId={espId}
         lastSyncLabel={lastSyncLabel}
         onSync={onSync}
