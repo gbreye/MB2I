@@ -16,16 +16,14 @@ function Header({ active, onNavigate, user, onLogout, onOpenSettings }) {
   return (
     <header
       ref={scope}
-      className="sticky top-0 z-40 bg-paper-bright/90 backdrop-blur-md"
+      className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] sm:sticky sm:inset-x-auto sm:bottom-auto sm:top-0 sm:px-0 sm:pb-0 sm:bg-paper-bright/90 sm:backdrop-blur-md"
     >
-      <div
-        className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-2 px-4 py-2.5 sm:gap-3 sm:px-6"
-      >
+      <div className="mx-auto flex w-full max-w-md items-center gap-1 rounded-full border border-line/60 bg-paper-bright/95 p-1.5 shadow-soft backdrop-blur-xl sm:max-w-6xl sm:gap-3 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:px-6 sm:py-2.5 sm:shadow-none sm:backdrop-blur-none">
         <button
           type="button"
           data-reveal
           onClick={() => onNavigate('painel')}
-          className="-ml-1 flex items-center gap-2 rounded-xl px-1 py-1 hover:bg-paper-soft"
+          className="-ml-0.5 flex shrink-0 items-center gap-2 rounded-full px-1 py-1 hover:bg-paper-soft sm:-ml-1 sm:rounded-xl"
           aria-label="MB2I · ir para o painel"
         >
           <BrandMark className="size-6" />
@@ -36,7 +34,7 @@ function Header({ active, onNavigate, user, onLogout, onOpenSettings }) {
 
         <nav
           data-reveal
-          className="flex items-center gap-1 rounded-full bg-paper-soft p-1"
+          className="flex min-w-0 flex-1 items-center justify-center gap-1 rounded-full bg-paper-soft p-1 sm:flex-none sm:justify-start"
           aria-label="Navegação principal"
         >
           {NAV_ITEMS.map((item) => {
@@ -61,7 +59,7 @@ function Header({ active, onNavigate, user, onLogout, onOpenSettings }) {
           })}
         </nav>
 
-        <div data-reveal className="ml-auto flex items-center gap-1.5">
+        <div data-reveal className="ml-auto flex shrink-0 items-center gap-1 sm:gap-1.5">
           {user ? (
             <span className="hidden min-w-0 items-center gap-2 sm:flex">
               <span
@@ -79,7 +77,7 @@ function Header({ active, onNavigate, user, onLogout, onOpenSettings }) {
           <button
             type="button"
             onClick={onOpenSettings}
-            className="grid size-8 shrink-0 place-items-center rounded-xl text-ink-soft transition-colors hover:bg-paper-soft hover:text-ink"
+            className="grid size-8 shrink-0 place-items-center rounded-full text-ink-soft transition-colors hover:bg-paper-soft hover:text-ink sm:rounded-xl"
             aria-label="Abrir configurações do app"
             aria-haspopup="dialog"
             title="Configurações"

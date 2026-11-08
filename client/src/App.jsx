@@ -96,7 +96,7 @@ function App() {
           onOpenSettings={openSettings}
         />
 
-        <main className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6 sm:py-6">
+        <main className="mx-auto w-full max-w-6xl px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-5 sm:px-6 sm:py-6">
           {view === 'add-esp' ? (
             <AddEsp
               espId={espId}

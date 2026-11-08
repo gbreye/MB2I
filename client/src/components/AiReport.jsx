@@ -192,7 +192,7 @@ function AiReport({ summary, metrics, chart, range, espId, online }) {
   )
 
   return (
-    <Panel data-reveal className="relative overflow-hidden">
+    <Panel className="relative h-full overflow-hidden">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">

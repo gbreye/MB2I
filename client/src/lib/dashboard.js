@@ -1,4 +1,5 @@
 import { formatElapsed, getFirstName } from './format'
+import { buildGardenScore } from './gardenScore'
 
 export function buildDashboardSummary({
   metrics,
@@ -47,6 +48,7 @@ export function buildDashboardSummary({
       : realtimeConnected
         ? 'Nenhuma leitura recebida ainda. Aguardando o dispositivo.'
         : 'Dispositivo offline e sem leituras recebidas.'
+  const garden = buildGardenScore(metrics)
 
   return {
     displayFirstName,
@@ -58,5 +60,6 @@ export function buildDashboardSummary({
     plantState,
     chartEmptyMessage,
     greeting,
+    garden,
   }
 }

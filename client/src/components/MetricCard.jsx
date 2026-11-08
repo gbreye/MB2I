@@ -65,8 +65,7 @@ function MetricCard({ metric, precision, showSparkline = true }) {
 
   return (
     <article
-      data-reveal="scale"
-      className={`${tone} min-w-0 rounded-2xl bg-paper-bright p-4 shadow-xs transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-card`}
+      className={`${tone} flex h-full min-w-0 flex-col rounded-2xl bg-paper-bright p-3 shadow-xs transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-card sm:p-4`}
     >
       <div className="flex items-center justify-between gap-2">
         <span className="truncate font-sans text-xs font-semibold text-ink-soft">
@@ -87,7 +86,7 @@ function MetricCard({ metric, precision, showSparkline = true }) {
             <CountUp
               value={metric.value}
               precision={precision}
-              className="font-sans text-3xl font-bold leading-none tracking-[-0.04em] tabular-nums"
+              className="font-sans text-2xl font-bold leading-none tracking-[-0.04em] tabular-nums sm:text-3xl"
             />
             <span className="text-xs font-medium text-muted">{metric.unit}</span>
           </>
@@ -96,7 +95,7 @@ function MetricCard({ metric, precision, showSparkline = true }) {
         )}
       </div>
 
-      <div className="mt-2 h-8">
+      <div className="mt-2 flex min-h-8 flex-1 items-center">
         {showSparkline ? (
           hasHistory ? (
             <Sparkline values={history} />
@@ -120,7 +119,7 @@ function MetricCard({ metric, precision, showSparkline = true }) {
         />
       </div>
 
-      <p className="mt-2 truncate text-xs text-muted" title={metric.hint}>
+      <p className="mt-2 hidden truncate text-xs text-muted sm:block" title={metric.hint}>
         {hasValue ? metric.hint : 'Dados não recebidos do dispositivo.'}
       </p>
     </article>

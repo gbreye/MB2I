@@ -30,21 +30,23 @@ function EventLog({ events }) {
   )
 
   return (
-    <Panel>
+    <Panel className="flex h-full flex-col">
       <div className="flex items-center justify-between gap-3">
         <PanelTitle>Diário</PanelTitle>
         <PanelBadge>{events.length}</PanelBadge>
       </div>
 
       {events.length === 0 ? (
-        <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">
-          Nenhuma atividade nesta sessão. Os eventos aparecerão aqui quando
-          houver leituras ou ações no sistema.
-        </p>
+        <div className="mt-3 flex flex-1 items-center justify-center rounded-xl bg-paper-soft px-4 py-6 text-center">
+          <p className="max-w-[30ch] text-sm leading-relaxed text-pretty text-muted">
+            Nenhuma atividade nesta sessão. Os eventos aparecerão aqui quando
+            houver leituras ou ações no sistema.
+          </p>
+        </div>
       ) : (
         <ul
           ref={listRef}
-          className="scrollbar-slim mt-3 max-h-64 space-y-3 overflow-y-auto pr-1"
+          className="scrollbar-slim mt-3 max-h-64 space-y-3 overflow-y-auto pr-1 lg:max-h-none lg:min-h-0 lg:flex-1"
         >
           {events.map((event) => (
             <li className="flex gap-3" key={event.id}>
