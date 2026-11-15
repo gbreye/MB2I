@@ -9,6 +9,7 @@ import { registerRealtime } from './realtime/stream.js'
 import AuthRouter from './routes/authRouter.js'
 import EspRouter from './routes/espRouter.js'
 import AiRouter from './routes/aiRouter.js'
+import WeatherRouter from './routes/weatherRouter.js'
 
 const app = express()
 const server = http.createServer(app)
@@ -69,6 +70,7 @@ app.use(express.json())
 app.use('/auth', AuthRouter)
 app.use('/esp', EspRouter)
 app.use('/ai', AiRouter)
+app.use('/weather', WeatherRouter)
 
 const PORT = Number(process.env.PORT) || 3000
 
