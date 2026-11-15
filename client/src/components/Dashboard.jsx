@@ -10,6 +10,7 @@ import EventLog from './EventLog'
 import GardenScore from './GardenScore'
 import MetricCard from './MetricCard'
 import PlantStatus from './PlantStatus'
+import WeatherCard from './WeatherCard'
 import Button from './ui/Button'
 import { Panel } from './ui/Panel'
 
@@ -25,6 +26,7 @@ const DEFAULT_ORDER = [
   'summary',
   ...METRIC_WIDGET_IDS,
   'garden',
+  'weather',
   'ai',
   'chart',
   'events',
@@ -50,6 +52,10 @@ const WIDGET_META = {
   garden: {
     label: 'Saúde do jardim',
     span: 'col-span-1 sm:col-span-1 lg:col-span-3',
+  },
+  weather: {
+    label: 'Meteorologia',
+    span: 'col-span-2 sm:col-span-4 lg:col-span-12',
   },
 }
 
@@ -265,6 +271,7 @@ function Dashboard({
       ]),
     ),
     garden: <GardenScore garden={summary.garden} />,
+    weather: <WeatherCard />,
     ai: (
       <AiReport
         summary={summary}
