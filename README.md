@@ -64,6 +64,7 @@ O banco é criado automaticamente em `backend/data/mb2i.sqlite` na primeira exec
 - `POST /esp/data` — recebe leituras do ESP32. Se `ESP_API_KEY` estiver definido, envie `x-api-key`.
 - `POST /ai/report` — requer cookie/JWT; gera um relatório da planta com Gemini usando os dados atuais do painel.
 - `GET /ai/status` — requer cookie/JWT; valida a chave e lista os modelos disponíveis sem consumir cota.
+- `GET /weather` — previsão atual, resumo do dia e o local usado. Aceita `?city=Nome da cidade`; sem ela, estima o local pelo IP da conexão.
 - `GET /` — health check simples.
 
 ### Relatório de IA (Gemini)
@@ -87,6 +88,28 @@ são ignorados automaticamente. Reinicie o backend depois de alterar o `.env`.
 Para conferir a configuração em produção, faça login e chame `GET /ai/status`.
 A resposta mostra `configured`, `keyValid`, `models` e `available` — assim dá
 para ver se a chave chegou ao servidor e se o modelo configurado ainda existe.
+
+### Meteorologia
+
+O card de meteorologia usa o [Open-Meteo](https://open-meteo.com/) (sem chave de API).
+
+- Com uma cidade digitada no card, o backend geocodifica o nome:
+  `GET /weather?city=Curitiba`.
+- Sem cidade, o local é estimado pelo IP da conexão (respeitando o
+  `X-Forwarded-For` quando `trust proxy` está ativo). Em IPs privados
+  (localhost, rede interna) ou se a consulta falhar, vale o local padrão.
+- A cidade escolhida fica salva no navegador e não é gravada no banco.
+- Para trocar o local padrão, use `WEATHER_DEFAULT_PLACE`, `WEATHER_DEFAULT_LAT`
+  e `WEATHER_DEFAULT_LON` no `.env`:
+
+```env
+WEATHER_DEFAULT_PLACE=São Paulo
+WEATHER_DEFAULT_LAT=-23.55
+WEATHER_DEFAULT_LON=-46.63
+```
+
+As previsões ficam em cache em memória por 10 minutos (`WEATHER_TIMEOUT_MS`
+define o tempo máximo de cada chamada externa, padrão `8000`).
 
 ### Tempo real
 
@@ -122,4 +145,5 @@ O frontend já utiliza:
 - login, cadastro, restauração de sessão e logout reais;
 - cookie `httpOnly` enviado com `credentials: include`;
 - associação de ESP por ID;
-- Socket.IO com cookie de sessão para atualizar métricas, dispositivo, gráfico e diário em tempo real.
+- Socket.IO com cookie de sessão para atualizar métricas, dispositivo, gráfico e diário em tempo real;
+- card de meteorologia com local por cidade digitada ou pelo IP da conexão.
