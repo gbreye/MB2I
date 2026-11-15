@@ -46,10 +46,20 @@ export const aiApi = {
   },
 }
 
+/** Meteorologia do painel: por cidade digitada ou pelo IP da conexão. */
+export const weatherApi = {
+  current(city) {
+    const query = city ? `?city=${encodeURIComponent(city)}` : ''
+
+    return request(`/weather${query}`)
+  },
+}
+
 /** Fachada única usada pelos componentes. */
 export const api = {
   ...authApi,
   ...espApi,
   ...aiApi,
+  ...weatherApi,
   associateEsp: espApi.associate,
 }
